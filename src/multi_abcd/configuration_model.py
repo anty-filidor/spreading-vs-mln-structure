@@ -5,7 +5,7 @@ import numpy as np
 import powerlaw
 import scipy
 
-from abcd.helpers import prepare_layer_pairs
+from src.multi_abcd.helpers import prepare_layer_pairs
 
 
 def get_nb_actors(net: nd.MultilayerNetwork) -> int:
