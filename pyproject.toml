@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools~=69.5.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "src"
+version = "0.0.1"
+description = "Spreading Effectiveness Versus Structure of the Network"
+authors = [{name = "Michał Czuba", email="michal.czuba@pwr.edu.pl"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["env/requirements.txt"]}
+
+[tool.setuptools.packages.find]
+exclude = ["*tests*"]

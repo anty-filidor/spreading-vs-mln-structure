@@ -1,0 +1,6 @@
+outs:
+- md5: 3664094f10f1299fcba1bdb90c56073f.dir
+  size: 7667718
+  nfiles: 9
+  hash: md5
+  path: degree_sequences
