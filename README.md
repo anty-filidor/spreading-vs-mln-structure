@@ -18,6 +18,12 @@ conda activate spreading-vs-mln-structure
 python -m ipykernel install --user --name=spreading-vs-mln-structure
 ```
 
+To use scripts which produce analysis, install the source code:
+
+```bash
+pip install -e .
+```
+
 ## Data
 
 Dataset is stored on a DVC remote. Thus, to obtain it you have to access a Google Drive. Please
@@ -33,9 +39,8 @@ results which are subjects of the analysis.
 .
 ├── README.md
 ├── data
+│   ├── multi_abcd
 │   ├── networks            -> networks used in experiments
-│   ├── processed_results
-│   ├── raw_results
 │   └── test                -> examplary results of the simulator used in the E2E test
 ├── env                     -> a definition of the runtime environment
 ├── scripts
