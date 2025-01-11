@@ -3,6 +3,7 @@ from typing import Literal
 
 import network_diffusion as nd
 import networkx as nx
+import pandas as pd
 
 from scipy.stats import kendalltau
 from sklearn.metrics import adjusted_mutual_info_score
@@ -47,14 +48,15 @@ def align_layers(
     return {l1_name: l1, l2_name: l2}
 
 
-def degrees_correlation(graph_1: nx.Graph, graph_2: nx.Graph, alpha: float = 0.05) -> float:
-    _l1_deg = nx.degree_histogram(graph_1)
-    _l2_deg = nx.degree_histogram(graph_2)
-    l1_deg, l2_deg = [], []
-    for idx in range(max(len(_l1_deg), len(_l2_deg))):
-        l1_deg.append(_l1_deg[idx] if idx + 1 <= len(_l1_deg) else 0)
-        l2_deg.append(_l2_deg[idx] if idx + 1 <= len(_l2_deg) else 0)
+def degrees_correlation(graph_1: nx.Graph, graph_2: nx.Graph, alpha: float | None = 0.05) -> float:
+    _l1_deg = dict(graph_1.degree())
+    _l2_deg = dict(graph_2.degree())
+    df_deg = pd.DataFrame({"graph_1": _l1_deg, "graph_2": _l2_deg}).sort_index()
+    assert None not in df_deg  # a sanity check
+    l1_deg, l2_deg = df_deg["graph_1"].to_list(), df_deg["graph_2"].to_list()
     statistic, pvalue = kendalltau(x=l1_deg, y=l2_deg, nan_policy="raise", variant="b")
+    if not alpha:
+        return statistic
     if pvalue < alpha:
         return statistic
     return 0.0

@@ -21,10 +21,14 @@ def compute_statistics(net: nd.MultilayerNetwork, mode: str) -> dict[str, list[d
         print("\t\t", la_name, lb_name)
         aligned_layers = correlations.align_layers(net, la_name, lb_name, mode)
 
-        degree_stat = correlations.degrees_correlation(aligned_layers[la_name], aligned_layers[lb_name])
+        degree_stat = correlations.degrees_correlation(
+            graph_1=aligned_layers[la_name], graph_2=aligned_layers[lb_name], alpha=None
+        )
         degree_stats.append({(la_name, lb_name): degree_stat})
 
-        partition_stat = correlations.partitions_correlation(aligned_layers[la_name], aligned_layers[lb_name])
+        partition_stat = correlations.partitions_correlation(
+            graph_1=aligned_layers[la_name], graph_2=aligned_layers[lb_name]
+        )
         partition_stats.append({(la_name, lb_name): partition_stat})
 
         edges_stat = correlations.edges_r(aligned_layers[la_name], aligned_layers[lb_name])
@@ -53,7 +57,9 @@ def save_statistics(statistics: dict[str, pd.DataFrame], net_name: str, out_dir:
 
 def plot_statistics(statistics: dict[str, pd.DataFrame], net_name: str) -> Figure:
 
-    fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(18, 6), gridspec_kw={"width_ratios": [33, 33, 33, 1]})
+    fig, ax = plt.subplots(
+        nrows=1, ncols=4, figsize=(18, 6), gridspec_kw={"width_ratios": [33, 33, 33, 1]}
+    )
     fig.tight_layout(pad=2.5, rect=(0.05, 0.05, 0.95, 0.95))
 
     helpers.plot_heatmap(statistics["degree"], ax[0], ax[-1], "degrees")
