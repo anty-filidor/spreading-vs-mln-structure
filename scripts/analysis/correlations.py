@@ -71,7 +71,7 @@ def plot_statistics(statistics: dict[str, pd.DataFrame], net_name: str) -> Figur
     return fig
 
 
-if __name__ == "__main__":
+def main(workdir: Path) -> None:
 
     mode = "destructive"
     networks = [
@@ -86,7 +86,6 @@ if __name__ == "__main__":
         "toy_network",
     ]
 
-    workdir = Path(__file__).parent.parent.parent / "data/multi_abcd/correlations"
     workdir.mkdir(exist_ok=True, parents=True)
 
     pdf = PdfPages(workdir.joinpath(f"correlations.pdf"))
@@ -94,7 +93,9 @@ if __name__ == "__main__":
 
         print(net_name)
         net = load_network(net_name, as_tensor=False)
-        if net.is_directed(): raise ValueError("Only undirected networks can be processed right now!")
+        if net.is_directed(): raise ValueError(
+            "Only undirected networks can be processed right now!"
+        )
 
         statistics_raw = compute_statistics(net, mode)
         statistics_df = convert_to_correlation_matrix(statistics_raw)
@@ -107,3 +108,58 @@ if __name__ == "__main__":
         plt.close(figure)
 
     pdf.close()
+
+
+def revive_statistics(csv_path: Path) -> dict[str, str | pd.DataFrame]:
+    name_split = csv_path.stem.split("_")
+    net_name = "_".join(name_split[:-1])
+    corr_type = name_split[-1]
+    return {
+        "net_name": net_name,
+        "corr_type": corr_type,
+        "statistics": pd.read_csv(csv_path, index_col=0),
+    }
+
+
+def plot_pretty_statistics(statistics: dict[str, pd.DataFrame], stats_name: str) -> None:
+    fig, ax = plt.subplots(
+        nrows=1,
+        ncols=len(statistics) + 1,
+        figsize=(4 * len(statistics), 4),
+        gridspec_kw={"width_ratios": [*([99 / len(statistics)] * len(statistics)), 1]}
+    )
+    fig.tight_layout(pad=0, rect=(0, 0, .98, .88))
+    for net_idx, (net_name, net_stat) in enumerate(statistics.items()):
+        helpers.plot_heatmap(net_stat, ax[net_idx], ax[-1], net_name)
+    fig.suptitle(stats_name)
+    return fig
+
+
+def pretty_plots(workdir: Path) -> None:
+    forbidden_nets = ["toy_network"]
+    raw_visualisations = []
+    for csv_name in workdir.glob("*.csv"):
+        statistics = revive_statistics(csv_name)
+        raw_visualisations.append(statistics)
+    
+    corr_types = sorted(list({ct["corr_type"] for ct in raw_visualisations}))
+    nets = sorted(list({ct["net_name"] for ct in raw_visualisations}))
+
+    pivoted_visualisations = {ct: {n: None for n in nets if n not in forbidden_nets} for ct in corr_types}
+    for rv in raw_visualisations:
+        if rv["net_name"] in forbidden_nets:
+            continue
+        pivoted_visualisations[rv["corr_type"]][rv["net_name"]] = rv["statistics"]
+    
+    pdf = PdfPages(workdir.joinpath(f"correlations_pretty.pdf"))
+    for pv_k, pv_v in pivoted_visualisations.items():
+        figure = plot_pretty_statistics(pv_v, pv_k)
+        figure.savefig(pdf, format="pdf")
+        plt.close(figure)
+    pdf.close()
+
+
+if __name__ == "__main__":
+    workdir = Path(__file__).parent.parent.parent / "data/multi_abcd/correlations"
+    # main(workdir)
+    pretty_plots(workdir)

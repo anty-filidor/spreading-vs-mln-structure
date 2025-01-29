@@ -51,11 +51,16 @@ def plot_heatmap(
     mask: Optional[pd.DataFrame] = None,
     fmt: Optional[str] = ".3f",
 ) -> None:
+    if len(vis_df.columns) >= 5:
+        new_cols = {col: str(idx) for idx, col in enumerate(vis_df.columns, start=1)}
+        vis_df = vis_df.rename(columns=new_cols)
+        vis_df = vis_df.rename(index=new_cols)
     if len(vis_df.columns) > 10:
-        annot_kws = {"size": 4}
-        fmt = ".1f"
+        annot = False
+        annot_kws = None
     else:
-        annot_kws = {"size": 14}
+        annot = True
+        annot_kws = {"size": 12}
     sns.heatmap(
         vis_df,
         ax=heatmap_ax,
@@ -63,7 +68,7 @@ def plot_heatmap(
         cmap=cmap,
         vmin=vrange[0],
         vmax=vrange[1],
-        annot=True,
+        annot=annot,
         annot_kws=annot_kws,
         fmt=fmt,
         yticklabels=prepare_ticklabels(vis_df.index),
