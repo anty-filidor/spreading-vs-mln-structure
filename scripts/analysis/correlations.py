@@ -12,6 +12,19 @@ from src.multi_abcd import configuration_model, correlations, helpers
 from src.loaders.net_loader import load_network
 
 
+NETS_MAPPING = {
+    "arxiv_netscience_coauthorship": "arxiv",
+    "aucs": "aucs",
+    "cannes": "cannes",
+    "ckm_physicians": "ckmp",
+    "eu_transportation": "eutr-A",
+    "l2_course_net_1": "l2-course",
+    "lazega": "lazega",
+    "timik1q2009": "timik",
+    "toy_network": "toy_network",
+}
+
+
 def compute_statistics(net: nd.MultilayerNetwork, mode: str) -> dict[str, list[dict]]:
     
     print("\tComputing statistics")
@@ -73,18 +86,8 @@ def plot_statistics(statistics: dict[str, pd.DataFrame], net_name: str) -> Figur
 
 def main(workdir: Path) -> None:
 
-    mode = "destructive"
-    networks = [
-        "arxiv_netscience_coauthorship",
-        "aucs",
-        "cannes",
-        "ckm_physicians",
-        "eu_transportation",
-        "l2_course_net_1",
-        "lazega",
-        "timik1q2009",
-        "toy_network",
-    ]
+    mode = "destructive"  # "additive" not uset in the paper
+    networks = list(NETS_MAPPING.keys())
 
     workdir.mkdir(exist_ok=True, parents=True)
 
@@ -121,17 +124,22 @@ def revive_statistics(csv_path: Path) -> dict[str, str | pd.DataFrame]:
     }
 
 
-def plot_pretty_statistics(statistics: dict[str, pd.DataFrame], stats_name: str) -> None:
+def plot_pretty_statistics(stats_df: dict[str, pd.DataFrame], stats_name: str | None = None) -> None:
     fig, ax = plt.subplots(
         nrows=1,
-        ncols=len(statistics) + 1,
-        figsize=(4 * len(statistics), 4),
-        gridspec_kw={"width_ratios": [*([99 / len(statistics)] * len(statistics)), 1]}
+        ncols=len(stats_df) + 1,
+        figsize=(4 * len(stats_df), 4.2),
+        gridspec_kw={"width_ratios": [*([98 / len(stats_df)] * len(stats_df)), 2]}
     )
-    fig.tight_layout(pad=0, rect=(0, 0, .98, .88))
-    for net_idx, (net_name, net_stat) in enumerate(statistics.items()):
-        helpers.plot_heatmap(net_stat, ax[net_idx], ax[-1], net_name)
-    fig.suptitle(stats_name)
+    fig.tight_layout(pad=.0, rect=(.0, .0, .97, .95))
+    for net_idx, (net_name, net_stat) in enumerate(stats_df.items()):
+        helpers.plot_heatmap(
+            vis_df=net_stat,
+            heatmap_ax=ax[net_idx],
+            bar_ax=ax[-1],
+            title=NETS_MAPPING[net_name],
+            vrange=(-1., 1) if stats_name in {"degree"} else (0., 1.),
+        )
     return fig
 
 
@@ -140,23 +148,25 @@ def pretty_plots(workdir: Path) -> None:
     raw_visualisations = []
     for csv_name in workdir.glob("*.csv"):
         statistics = revive_statistics(csv_name)
+        if statistics["net_name"] in forbidden_nets:
+            continue
         raw_visualisations.append(statistics)
     
     corr_types = sorted(list({ct["corr_type"] for ct in raw_visualisations}))
     nets = sorted(list({ct["net_name"] for ct in raw_visualisations}))
 
-    pivoted_visualisations = {ct: {n: None for n in nets if n not in forbidden_nets} for ct in corr_types}
+    pivoted_visualisations = {ct: {n: None for n in nets} for ct in corr_types}
     for rv in raw_visualisations:
         if rv["net_name"] in forbidden_nets:
             continue
         pivoted_visualisations[rv["corr_type"]][rv["net_name"]] = rv["statistics"]
     
-    pdf = PdfPages(workdir.joinpath(f"correlations_pretty.pdf"))
     for pv_k, pv_v in pivoted_visualisations.items():
+        pdf = PdfPages(workdir.joinpath(f"correlations_{pv_k}.pdf"))
         figure = plot_pretty_statistics(pv_v, pv_k)
         figure.savefig(pdf, format="pdf")
         plt.close(figure)
-    pdf.close()
+        pdf.close()
 
 
 if __name__ == "__main__":
