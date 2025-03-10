@@ -1,75 +1,111 @@
-# from julia.api import Julia
-# # jl = Julia(compiled_modules=False)
+"""A Python wrapper to the MLNABCDGraphGenerator Julia package."""
 
-# from julia import Main
-# Main.println("I'm printing from a Julia function!")
+from dataclasses import dataclass
 
+from juliacall import JuliaError
 from juliacall import Main as jl
 
-# jl.Pkg.add(url="https://github.com/bkamins/ABCDGraphGenerator.jl")
-# jl.Pkg.add(url="https://github.com/KrainskiL/MLNABCDGraphGenerator.jl")
-jl.seval("using MLNABCDGraphGenerator")
 
-edges_cor_path = "/Users/michal/Development/MLNABCDGraphGenerator.jl/utils/edges_cor_matrix.csv"
-layer_params_path = "/Users/michal/Development/MLNABCDGraphGenerator.jl/utils/layer_params.csv"
-edges_filename = "./edgelist.dat"
-communities_filename = "./communities.dat"
+@dataclass
+class MLNConfig:
+    seed: int
+    n: int
+    edges_cor: str
+    layer_params: str
+    d_max_iter: int
+    c_max_iter: int
+    t: int
+    eps: float
+    d: int
+    edges_filename: str
+    communities_filename: str
 
-config = jl.MLNABCDGraphGenerator.MLNConfig(
-    42,  # seed
-    1000,  # n
-    edges_cor_path,  # edges_cor
-    layer_params_path,  # layer_params
-    1000,  # d_max_iter
-    1000,  # c_max_iter
-    100,  # t
-    0.01,  # eps
-    2,  # d
-    edges_filename,  # edges_filename
-    communities_filename,  # communities_filename
-)
-# config = jl.MLNABCDGraphGenerator.parse_config(filename)
-
-#Active nodes
-active_nodes = jl.MLNABCDGraphGenerator.generate_active_nodes(config)
-#Degree Sequences
-degrees = jl.MLNABCDGraphGenerator.generate_degrees(config, active_nodes, False)
-#Sizes of communities
-com_sizes, coms = jl.MLNABCDGraphGenerator.generate_communities(config, active_nodes)
-#Generate ABCD graphs
-edges = jl.MLNABCDGraphGenerator.generate_abcd(config, degrees, com_sizes, coms)
-#Map nodes and communities to agents
-edges = jl.MLNABCDGraphGenerator.map_edges_to_agents(edges, active_nodes)
-coms = jl.MLNABCDGraphGenerator.map_communities_to_agents(config.n, coms, active_nodes)
-#Adjust edges correlation
-edges_rewired = jl.MLNABCDGraphGenerator.adjust_edges_correlation(config, edges, coms, active_nodes, False, False)
-#Save edges to file
-jl.MLNABCDGraphGenerator.write_edges(config, edges_rewired)
-#Save communities to file
-jl.MLNABCDGraphGenerator.write_communities(config, coms)
+    def __post_init__(self) -> None:
+        assert isinstance(self.seed, int)
+        assert isinstance(self.n, int)
+        assert isinstance(self.edges_cor, str)
+        assert isinstance(self.layer_params, str)
+        assert isinstance(self.d_max_iter, int)
+        assert isinstance(self.c_max_iter, int)
+        assert isinstance(self.t, int)
+        assert isinstance(self.d, int)
+        assert isinstance(self.eps, float)
+        assert isinstance(self.d, int)
+        assert isinstance(self.edges_filename, str)
+        assert isinstance(self.communities_filename, str)
 
 
+class MLNABCDGraphGenerator:
+    """A wrapper class for jl.MLNABCDGraphGenerator."""
+
+    @staticmethod
+    def install_julia_dependencies():
+        jl.Pkg.add(url="https://github.com/bkamins/ABCDGraphGenerator.jl")
+        jl.Pkg.add(url="https://github.com/KrainskiL/MLNABCDGraphGenerator.jl")
+
+    def __call__(self, config: MLNConfig) -> None:
+        try:
+            jl.seval("using MLNABCDGraphGenerator")
+        except JuliaError:
+            self.install_julia_dependencies()
+
+        # Load config
+        config = jl.MLNABCDGraphGenerator.MLNConfig(
+            config.seed,
+            config.n,
+            config.edges_cor,
+            config.layer_params,
+            config.d_max_iter,
+            config.c_max_iter,
+            config.t,
+            config.eps,
+            config.d,
+            config.edges_filename,
+            config.communities_filename,
+        )
+
+        # Active nodes
+        active_nodes = jl.MLNABCDGraphGenerator.generate_active_nodes(config)
+
+        # Degree Sequences
+        degrees = jl.MLNABCDGraphGenerator.generate_degrees(config, active_nodes, False)
+
+        # Sizes of communities
+        com_sizes, coms = jl.MLNABCDGraphGenerator.generate_communities(config, active_nodes)
+
+        # Generate ABCD graphs
+        edges = jl.MLNABCDGraphGenerator.generate_abcd(config, degrees, com_sizes, coms)
+
+        # Map nodes and communities into agents
+        edges = jl.MLNABCDGraphGenerator.map_edges_to_agents(edges, active_nodes)
+        coms = jl.MLNABCDGraphGenerator.map_communities_to_agents(config.n, coms, active_nodes)
+
+        # Adjust edges correlation
+        edges_rewired = jl.MLNABCDGraphGenerator.adjust_edges_correlation(
+            config, edges, coms, active_nodes, False, False
+        )
+
+        # Save edges to file
+        jl.MLNABCDGraphGenerator.write_edges(config, edges_rewired)
+
+        # Save communities to file
+        jl.MLNABCDGraphGenerator.write_communities(config, coms)
 
 
+if __name__ == "__main__":
 
+    mln_config = MLNConfig(
+        seed=42,
+        n=1000,
+        edges_cor="/Users/michal/Development/MLNABCDGraphGenerator.jl/utils/edges_cor_matrix.csv",
+        layer_params= "/Users/michal/Development/MLNABCDGraphGenerator.jl/utils/layer_params.csv",
+        d_max_iter=1000,
+        c_max_iter=1000,
+        t=100,
+        eps=0.01,
+        d=2,
+        edges_filename="./edgelist.dat",
+        communities_filename="./communities.dat",
+    )
 
-
-
-
-
-
-
-
-
-
-jl.println("Hello from Julia!")
-# Hello from Julia!
-x = jl.rand(range(10), 3, 5)
-x._jl_display()
-# 3×5 Matrix{Int64}:
-#  8  1  7  0  6
-#  9  2  1  4  0
-#  1  8  5  4  0
-import numpy
-numpy.sum(x, axis=0)
-# array([18, 11, 13,  8,  6], dtype=int64)
+    MLNABCDGraphGenerator()(config=mln_config)
