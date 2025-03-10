@@ -51,11 +51,19 @@ def plot_heatmap(
     mask: Optional[pd.DataFrame] = None,
     fmt: Optional[str] = ".3f",
 ) -> None:
-    if len(vis_df.columns) > 10:
-        annot_kws = {"size": 4}
-        fmt = ".1f"
+    if len(vis_df.columns) >= 5:
+        annot = False
+        font_size = None
+        yticklabels=()
+        xticklabels=()
     else:
-        annot_kws = {"size": 14}
+        annot = True
+        font_size = 18
+        yticklabels=prepare_ticklabels(vis_df.index)
+        xticklabels=prepare_ticklabels(vis_df.columns)
+    
+    title_size = 22
+
     sns.heatmap(
         vis_df,
         ax=heatmap_ax,
@@ -63,15 +71,20 @@ def plot_heatmap(
         cmap=cmap,
         vmin=vrange[0],
         vmax=vrange[1],
-        annot=True,
-        annot_kws=annot_kws,
+        annot=annot,
+        annot_kws={"size": font_size},
         fmt=fmt,
-        yticklabels=prepare_ticklabels(vis_df.index),
-        xticklabels=prepare_ticklabels(vis_df.columns),
+        square=True,
+        yticklabels=yticklabels,
+        xticklabels=xticklabels,
         linewidth=.5,
         mask=mask,
         cbar= True if bar_ax is not None else False,
     )
-    heatmap_ax.set_title(title)
+
+    heatmap_ax.set_title(title, fontdict={"size": title_size})
+    heatmap_ax.set_xticklabels(heatmap_ax.get_xticklabels(), fontsize=font_size)
+    heatmap_ax.set_yticklabels(heatmap_ax.get_yticklabels(), fontsize=font_size)
     # heatmap_ax.invert_yaxis()
     # heatmap_ax.tick_params(axis="x", rotation=80)
+    bar_ax.tick_params(labelsize=title_size)
