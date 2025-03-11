@@ -1,13 +1,15 @@
 """A Python wrapper to the MLNABCDGraphGenerator Julia package."""
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from juliacall import JuliaError
 from juliacall import Main as jl
+import yaml
 
 
 @dataclass
 class MLNConfig:
+    """A wrapper for class for class for jl.MLNABCDGraphGenerator.MLNConfig."""
     seed: int
     n: int
     edges_cor: str
@@ -33,6 +35,16 @@ class MLNConfig:
         assert isinstance(self.d, int)
         assert isinstance(self.edges_filename, str)
         assert isinstance(self.communities_filename, str)
+    
+    def to_yaml(self, filename: str):
+        with open(filename, "w") as file:
+            yaml.dump(asdict(self), file, default_flow_style=False)
+
+    @staticmethod
+    def from_yaml(filename: str):
+        with open(filename, "r") as file:
+            data = yaml.safe_load(file)
+        return MLNConfig(**data)
 
 
 class MLNABCDGraphGenerator:
@@ -94,18 +106,23 @@ class MLNABCDGraphGenerator:
 
 if __name__ == "__main__":
 
+    # load from code
     mln_config = MLNConfig(
         seed=42,
         n=1000,
-        edges_cor="/Users/michal/Development/MLNABCDGraphGenerator.jl/utils/edges_cor_matrix.csv",
-        layer_params= "/Users/michal/Development/MLNABCDGraphGenerator.jl/utils/layer_params.csv",
+        edges_cor="scripts/configs/example_generate/edges_cor.csv",
+        layer_params= "scripts/configs/example_generate/layer_params.csv",
         d_max_iter=1000,
         c_max_iter=1000,
         t=100,
         eps=0.01,
         d=2,
-        edges_filename="./edgelist.dat",
+        edges_filename="./edges.dat",
         communities_filename="./communities.dat",
     )
 
+    # or from files
+    mln_config = MLNConfig.from_yaml("scripts/configs/example_generate/mln_config.yaml")
+
+    # then, generate a network
     MLNABCDGraphGenerator()(config=mln_config)
