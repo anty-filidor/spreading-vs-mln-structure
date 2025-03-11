@@ -2,17 +2,8 @@
 
 from pathlib import Path
 
-import network_diffusion as nd
-import pandas as pd
-
 from src.loaders.net_loader import load_network
-
-
-def get_degrees_table(net: nd.MultilayerNetwork) -> pd.DataFrame:
-    net_degrees = {}
-    for l_name, l_graph in net.layers.items():
-        net_degrees[l_name] = dict(l_graph.degree())
-    return pd.DataFrame(net_degrees).T
+from src.multi_abcd.correlations import degree_sequence
 
 
 networks = [
@@ -39,5 +30,5 @@ if __name__ == "__main__":
         net = load_network(net_name, as_tensor=False)
         if net.is_directed(): raise ValueError("Only undirected networks can be processed!")
 
-        degrees_table = get_degrees_table(net)
+        degrees_table = degree_sequence(net)
         degrees_table.to_csv(workdir / f"{net_name}_degrees.csv")

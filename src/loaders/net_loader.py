@@ -187,7 +187,7 @@ def _prepare_network(net: nd.MultilayerNetwork) -> nd.MultilayerNetwork:
 def prepare_network(load_networks_func: Callable) -> Callable:
     """Decorate loader function so that it has no isolated nodes."""
     @wraps(load_networks_func)
-    def wrapper(*args, **kwargs) -> nd.MultilayerNetwork :
+    def wrapper(*args, **kwargs) -> nd.MultilayerNetwork:
         net = load_networks_func(*args, **kwargs)
         return _prepare_network(net)
     return wrapper
@@ -253,5 +253,5 @@ def load_network(net_name: str) -> nd.MultilayerNetwork:
     elif net_name == TIMIK1Q2009:
         return get_timik1q2009_network()
     elif net_name == TOY_NETWORK:
-        return nd.mln.functions.get_toy_network_piotr()
+        return nd.mln.functions.get_toy_network_piotr()  # TODO
     raise AttributeError(f"Unknown network: {net_name}")

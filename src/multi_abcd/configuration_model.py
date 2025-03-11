@@ -17,6 +17,7 @@ def get_nb_layers(net: nd.MultilayerNetwork) -> int:
 
 
 def get_q(net: nx.Graph, num_actors: int) -> float:
+    """Get fraction of active nodes."""
     return len(net.nodes) / num_actors
 
 

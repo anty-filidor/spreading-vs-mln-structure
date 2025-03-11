@@ -34,7 +34,7 @@ def compute_statistics(net: nd.MultilayerNetwork, mode: str) -> dict[str, list[d
         print("\t\t", la_name, lb_name)
         aligned_layers = correlations.align_layers(net, la_name, lb_name, mode)
 
-        degree_stat = correlations.degrees_correlation(
+        degree_stat = correlations.degree_crosslayer_correlation(
             graph_1=aligned_layers[la_name], graph_2=aligned_layers[lb_name], alpha=None
         )
         degree_stats.append({(la_name, lb_name): degree_stat})

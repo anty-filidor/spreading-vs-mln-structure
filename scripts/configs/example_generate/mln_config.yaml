@@ -23,7 +23,7 @@ c_max_iter: 1000
 t: 100
 
 # percentage of edges to be rewired in each rewiring batch
-eps: 0.01
+eps: 0.05
 
 # dimensionality of latent space
 d: 2

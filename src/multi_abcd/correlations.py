@@ -48,7 +48,8 @@ def align_layers(
     return {l1_name: l1, l2_name: l2}
 
 
-def degrees_correlation(graph_1: nx.Graph, graph_2: nx.Graph, alpha: float | None = 0.05) -> float:
+# TODO
+def degree_crosslayer_correlation(graph_1: nx.Graph, graph_2: nx.Graph, alpha: float | None = 0.05) -> float:
     _l1_deg = dict(graph_1.degree())
     _l2_deg = dict(graph_2.degree())
     df_deg = pd.DataFrame({"graph_1": _l1_deg, "graph_2": _l2_deg}).sort_index()
@@ -57,9 +58,16 @@ def degrees_correlation(graph_1: nx.Graph, graph_2: nx.Graph, alpha: float | Non
     statistic, pvalue = kendalltau(x=l1_deg, y=l2_deg, nan_policy="raise", variant="b")
     if not alpha:
         return statistic
-    if pvalue < alpha:
+    elif pvalue < alpha:
         return statistic
     return 0.0
+
+
+def degree_sequence(net: nd.MultilayerNetwork) -> pd.DataFrame:
+    net_degrees = {}
+    for l_name, l_graph in net.layers.items():
+        net_degrees[l_name] = dict(l_graph.degree())
+    return pd.DataFrame(net_degrees).T
 
 
 def partitions_correlation(graph_1: nx.Graph, graph_2: nx.Graph) -> float:

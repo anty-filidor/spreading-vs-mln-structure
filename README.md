@@ -99,3 +99,5 @@ under `data/processed_results`:
 # TODO:
 - skip saving graphs as files and instead add networkx loader for them
 - handle configurations to be more flexible in terms of generating networks
+- rename multi_abcd module
+- bump version of nd
