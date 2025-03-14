@@ -1,10 +1,59 @@
+from copy import deepcopy
 from itertools import combinations
-from typing import Optional, Union
+from typing import Literal
 
-import matplotlib.pyplot as plt
+import networkx as nx
+import network_diffusion as nd
 import numpy as np
+
 import pandas as pd
-import seaborn as sns
+
+
+
+def align_layers(
+    net: nd.MultilayerNetwork,
+    l1_name: str,
+    l2_name: str,
+    method: Literal["destructive", "additive"],
+) -> dict[str, nx.Graph]:
+    """
+    Align set of nodes in the given two layers of a multilayer network.
+
+    :param net: _description_
+    :param l1_name: _description_
+    :param l2_name: _description_
+    :param method: there are two options:
+        `additive` - target set of nodes is union of nodes in two layers
+        `destructive` - target set of nodes is intersection of nodes in two layers
+    :return: _description_
+    """
+    l1 = deepcopy(net[l1_name])
+    l1_nodes = set(l1.nodes)
+
+    l2 = deepcopy(net[l2_name])
+    l2_nodes = set(l2.nodes)
+
+    if method == "additive":
+        correct_nodes = l1_nodes.union(l2_nodes)
+    elif method == "destructive":
+        correct_nodes = l1_nodes.intersection(l2_nodes)
+    else:
+        raise ValueError("Unknown alignment method!")
+
+    l1.remove_nodes_from(l1_nodes.difference(correct_nodes))
+    l1.add_nodes_from(correct_nodes.difference(l1_nodes))
+
+    l2.remove_nodes_from(l2_nodes.difference(correct_nodes))
+    l2.add_nodes_from(correct_nodes.difference(l2_nodes))
+
+    return {l1_name: l1, l2_name: l2}
+
+
+def get_degree_sequence(net: nd.MultilayerNetwork) -> pd.DataFrame:
+    net_degrees = {}
+    for l_name, l_graph in net.layers.items():
+        net_degrees[l_name] = dict(l_graph.degree())
+    return pd.DataFrame(net_degrees).T
 
 
 def prepare_layer_pairs(entities: list[str]) -> list[tuple[str, str]]:
@@ -32,59 +81,3 @@ def create_correlation_matrix(raw_statistics: list[dict[tuple[str, str], float]]
     for l_name in col_names:
         matrix.loc[l_name, l_name] = 1.0
     return matrix
-
-
-def prepare_ticklabels(series: pd.Index) -> Union[np.ndarray, str]:
-    try:
-        return series.to_numpy().round(2)
-    except:
-        return "auto"
-
-
-def plot_heatmap(
-    vis_df: pd.DataFrame,
-    heatmap_ax: plt.Axes,
-    bar_ax: plt.Axes,
-    title: str,
-    vrange=(-1., 1.),
-    cmap="GnBu_r", # "RdYlGn",
-    mask: Optional[pd.DataFrame] = None,
-    fmt: Optional[str] = ".3f",
-) -> None:
-    if len(vis_df.columns) >= 5:
-        annot = False
-        font_size = None
-        yticklabels=()
-        xticklabels=()
-    else:
-        annot = True
-        font_size = 18
-        yticklabels=prepare_ticklabels(vis_df.index)
-        xticklabels=prepare_ticklabels(vis_df.columns)
-    
-    title_size = 22
-
-    sns.heatmap(
-        vis_df,
-        ax=heatmap_ax,
-        cbar_ax=bar_ax,
-        cmap=cmap,
-        vmin=vrange[0],
-        vmax=vrange[1],
-        annot=annot,
-        annot_kws={"size": font_size},
-        fmt=fmt,
-        square=True,
-        yticklabels=yticklabels,
-        xticklabels=xticklabels,
-        linewidth=.5,
-        mask=mask,
-        cbar= True if bar_ax is not None else False,
-    )
-
-    heatmap_ax.set_title(title, fontdict={"size": title_size})
-    heatmap_ax.set_xticklabels(heatmap_ax.get_xticklabels(), fontsize=font_size)
-    heatmap_ax.set_yticklabels(heatmap_ax.get_yticklabels(), fontsize=font_size)
-    # heatmap_ax.invert_yaxis()
-    # heatmap_ax.tick_params(axis="x", rotation=80)
-    bar_ax.tick_params(labelsize=title_size)

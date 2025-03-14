@@ -5,7 +5,6 @@ import networkx as nx
 import network_diffusion as nd
 import pandas as pd
 
-from scipy.stats import kendalltau
 
 from src.generator.mln_abcd import MLNABCDGraphGenerator, MLNConfig
 from src.multi_abcd import configuration_model, correlations, helpers
@@ -17,87 +16,24 @@ def get_edges_cor(net: nd.MultilayerNetwork) -> pd.DataFrame:
     """Get correlation matrix for edges."""
     edges_cor_raw = []
     for la_name, lb_name in helpers.prepare_layer_pairs(net.layers.keys()):
-        aligned_layers = correlations.align_layers(net, la_name, lb_name, "destructive")
+        aligned_layers = helpers.align_layers(net, la_name, lb_name, "destructive")
         edges_stat = correlations.edges_r(aligned_layers[la_name], aligned_layers[lb_name])
         edges_cor_raw.append({(la_name, lb_name): edges_stat})
     edges_cor_df = helpers.create_correlation_matrix(edges_cor_raw)
     return edges_cor_df.round(3).replace(0.0, 0.001)
 
 
-def get_tau(net: nd.MultilayerNetwork, alpha: float | None = 0.05) -> dict[str, float]:
-    """
-    Get correlations between node labels and their degrees.
-
-    Note, that due to multilaterance of the network, the routine first converts labels of nodes
-    from the first layer so that the correlation is maximal (a node with the maximal degree gets the
-    highest ID) and then it applies these labels to compute correlations in remaining layers. It 
-    also computes correlations only for nodes with positive degree.  
-    """
-    net = net.to_multiplex()[0]
-    layer_names = sorted(list(net.layers))
-
-    degree_sequence  = correlations.degree_sequence(net).T
-    degree_sequence = degree_sequence.sort_index().sort_values(by=layer_names[0], ascending=False)
-    actors_map = {id: idx for idx, id in enumerate(list(degree_sequence.index)[::-1])}
-    degree_sequence = degree_sequence.rename(index=actors_map)
-
-    tau = {}
-    for l_name in layer_names:
-        l_ds = degree_sequence[l_name][degree_sequence[l_name] > 0]
-        statistic, pvalue = kendalltau(
-            x=l_ds.index.to_list(),
-            y=l_ds.to_list(),
-            nan_policy="raise",
-            variant="b",
-        )
-        if not alpha:
-            tau[l_name] = statistic.item()
-        elif pvalue < alpha:
-            tau[l_name] = statistic.item()
-        else:
-            tau[l_name] = 0.0
-    
-    return tau
-
-
-def get_r(net: nd.MultilayerNetwork, seed: int | None = None) -> dict[str, float]:
-    """
-    Get correlations between partitions.
-    
-    Nota, that due to impossibility to reverse the process of creating partitions by MLNABCD, this
-    function only approximates the correlations by treating the first (alphabetically) layer of the
-    network as the reference one.   
-    """
-    net = net.to_multiplex()[0]
-    layer_names = sorted(list(net.layers))
-
-    ref_layer = net[layer_names[0]]
-    ref_partitions = nx.community.louvain_communities(ref_layer, seed=seed)
-
-    r = {}
-    for l_name in layer_names:
-        ami = correlations.partitions_correlation(
-            graph_1=ref_layer,
-            graph_2=net[l_name],
-            graph_1_partitions=ref_partitions,
-            seed=seed,
-        )
-        r[l_name] = ami
-    
-    return r
-
-
 def get_layer_params(net: nd.MultilayerNetwork) -> pd.DataFrame:
-    """infer layers' parameters used by MLNABCD for a given network."""
+    """Infer layers' parameters used by MLNABCD for a given network."""
     q, gamma_delta_Delta, beta_s_S_xi = {}, {}, {}
-    tau = get_tau(net, alpha=None)
-    r = get_r(net, seed=RNG_SEED)
+    tau = configuration_model.get_tau(net, alpha=None)
+    r = configuration_model.get_r(net, seed=RNG_SEED)
 
     nb_actors = net.get_actors_num()
     for l_name, l_graph in net.layers.items():
         q[l_name] = configuration_model.get_q(l_graph, nb_actors)
-        gamma_delta_Delta[l_name] = configuration_model.get_degrees_stats(l_graph)
-        beta_s_S_xi[l_name] = configuration_model.get_partitions_stats(l_graph)
+        gamma_delta_Delta[l_name] = configuration_model.get_gamma_delta_Delta(l_graph)
+        beta_s_S_xi[l_name] = configuration_model.get_beta_s_S_xi(l_graph)
 
     params_dict = {
         l_name: {

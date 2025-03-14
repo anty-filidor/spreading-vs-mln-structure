@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from src.loaders.net_loader import load_network
-from src.multi_abcd.correlations import degree_sequence
+from src.multi_abcd.helpers import get_degree_sequence
 
 
 networks = [
@@ -30,5 +30,5 @@ if __name__ == "__main__":
         net = load_network(net_name, as_tensor=False)
         if net.is_directed(): raise ValueError("Only undirected networks can be processed!")
 
-        degrees_table = degree_sequence(net)
+        degrees_table = get_degree_sequence(net)
         degrees_table.to_csv(workdir / f"{net_name}_degrees.csv")

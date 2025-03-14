@@ -1,7 +1,5 @@
-from copy import deepcopy
-from typing import Any, Literal
+from typing import Any
 
-import network_diffusion as nd
 import networkx as nx
 import pandas as pd
 
@@ -9,46 +7,6 @@ from scipy.stats import kendalltau
 from sklearn.metrics import adjusted_mutual_info_score
 
 
-def align_layers(
-    net: nd.MultilayerNetwork,
-    l1_name: str,
-    l2_name: str,
-    method: Literal["destructive", "additive"],
-) -> dict[str, nx.Graph]:
-    """
-    Align set of nodes in the given two layers of a multilayer network.
-
-    :param net: _description_
-    :param l1_name: _description_
-    :param l2_name: _description_
-    :param method: there are two options:
-        `additive` - target set of nodes is union of nodes in two layers
-        `destructive` - target set of nodes is intersection of nodes in two layers
-    :return: _description_
-    """
-    l1 = deepcopy(net[l1_name])
-    l1_nodes = set(l1.nodes)
-
-    l2 = deepcopy(net[l2_name])
-    l2_nodes = set(l2.nodes)
-
-    if method == "additive":
-        correct_nodes = l1_nodes.union(l2_nodes)
-    elif method == "destructive":
-        correct_nodes = l1_nodes.intersection(l2_nodes)
-    else:
-        raise ValueError("Unknown alignment method!")
-
-    l1.remove_nodes_from(l1_nodes.difference(correct_nodes))
-    l1.add_nodes_from(correct_nodes.difference(l1_nodes))
-
-    l2.remove_nodes_from(l2_nodes.difference(correct_nodes))
-    l2.add_nodes_from(correct_nodes.difference(l2_nodes))
-
-    return {l1_name: l1, l2_name: l2}
-
-
-# TODO
 def degree_crosslayer_correlation(graph_1: nx.Graph, graph_2: nx.Graph, alpha: float | None = 0.05) -> float:
     _l1_deg = dict(graph_1.degree())
     _l2_deg = dict(graph_2.degree())
@@ -61,13 +19,6 @@ def degree_crosslayer_correlation(graph_1: nx.Graph, graph_2: nx.Graph, alpha: f
     elif pvalue < alpha:
         return statistic
     return 0.0
-
-
-def degree_sequence(net: nd.MultilayerNetwork) -> pd.DataFrame:
-    net_degrees = {}
-    for l_name, l_graph in net.layers.items():
-        net_degrees[l_name] = dict(l_graph.degree())
-    return pd.DataFrame(net_degrees).T
 
 
 def partitions_correlation(
@@ -100,14 +51,6 @@ def partitions_correlation(
 
     # compute AMI and return it
     return float(adjusted_mutual_info_score(partition_1_idcs, partition_2_idcs))
-
-
-def edges_jaccard(graph_1: nx.Graph, graph_2: nx.Graph) -> float:
-    graph_1_edges = set(graph_1.edges)
-    graph_2_edges = set(graph_2.edges)
-    if len(graph_1_edges) == 0 or len(graph_2_edges) == 0:
-        return None
-    return len(graph_1_edges.intersection(graph_2_edges)) / len(graph_1_edges.union(graph_2_edges))
 
 
 def edges_r(graph_1: nx.Graph, graph_2: nx.Graph) -> float:
