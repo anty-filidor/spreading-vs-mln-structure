@@ -86,7 +86,7 @@ def plot_statistics(statistics: dict[str, pd.DataFrame], net_name: str) -> Figur
 
 def main(workdir: Path) -> None:
 
-    mode = "destructive"  # "additive" not uset in the paper
+    mode = "destructive"  # "additive" not used in the paper
     networks = list(NETS_MAPPING.keys())
 
     workdir.mkdir(exist_ok=True, parents=True)

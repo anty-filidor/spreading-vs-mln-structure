@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Literal
+from typing import Any, Literal
 
 import network_diffusion as nd
 import networkx as nx
@@ -70,11 +70,18 @@ def degree_sequence(net: nd.MultilayerNetwork) -> pd.DataFrame:
     return pd.DataFrame(net_degrees).T
 
 
-def partitions_correlation(graph_1: nx.Graph, graph_2: nx.Graph) -> float:
-
+def partitions_correlation(
+    graph_1: nx.Graph, 
+    graph_2: nx.Graph,
+    graph_1_partitions: list[set[Any]] | None = None,
+    graph_2_partitions: list[set[Any]] | None = None,
+    seed: int | None = 42,
+) -> float:
     # obtain partitions in each graph
-    graph_1_partitions = nx.community.louvain_communities(graph_1)
-    graph_2_partitions = nx.community.louvain_communities(graph_2)
+    if not graph_1_partitions:
+        graph_1_partitions = nx.community.louvain_communities(graph_1, seed=seed)
+    if not graph_2_partitions:
+        graph_2_partitions = nx.community.louvain_communities(graph_2, seed=seed)
 
     # create dict keyed by nodes' ids, valued by array with partitions they're assigned into
     nodes_partitions = {node: [] for node in graph_1.nodes}
