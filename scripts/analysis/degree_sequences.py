@@ -28,7 +28,6 @@ if __name__ == "__main__":
 
         print(net_name)
         net = load_network(net_name, as_tensor=False)
-        if net.is_directed(): raise ValueError("Only undirected networks can be processed!")
 
         degrees_table = get_degree_sequence(net)
         degrees_table.to_csv(workdir / f"{net_name}_degrees.csv")

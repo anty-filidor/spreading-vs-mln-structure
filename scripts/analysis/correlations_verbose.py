@@ -155,9 +155,6 @@ def main(workdir: Path) -> None:
 
         print(net_name)
         net: nd.MultilayerNetwork = load_network(net_name, as_tensor=False)
-        if net.is_directed(): raise ValueError(
-            "Only undirected networks can be processed right now!"
-        )
 
         statistics_raw = compute_statistics(net, mode)
         statistics_df = convert_to_correlation_matrix(statistics_raw)

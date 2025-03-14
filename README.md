@@ -38,17 +38,23 @@ results which are subjects of the analysis.
 ```bash
 .
 ├── README.md
-├── data
-│   ├── multi_abcd
-│   ├── networks            -> networks used in experiments
-│   └── test                -> examplary results of the simulator used in the E2E test
-├── env                     -> a definition of the runtime environment
-├── scripts
-│   ├── analysis
-│   └── configs             -> exemplary configuration files
-├── src                     -> scripts to execute experiments and process the results
-├── run_experiments.py      -> ...
-├── test_reproducibility.py -> E2E test to prove that results can be repeated
+├── data                     -> use DVC to fetch this folder
+│   ├── nets_properties      -> properties of real networks used in experiments
+│   ├── networks             -> real networks used in experiments
+│   └── test                 -> data used in the E2E test
+├── env
+├── scripts                  -> call these to process `data` with `src`
+│   ├── analysis
+│   └── configs
+├── src                      -> main code used by various scripts
+│   ├── loaders
+│   ├── mln_abcd
+│   ├── runners
+│   └── `TODO` - finish description once simularot is fulle integrated
+├── pyproject.toml
+├── run_experiments.py  - `TODO`
+└── test_reproducibility.py - `TODO`
+
 ```
 
 ## Running the pipeline

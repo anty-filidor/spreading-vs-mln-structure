@@ -181,6 +181,7 @@ def _prepare_network(net: nd.MultilayerNetwork) -> nd.MultilayerNetwork:
     for _, l_graph in net.layers.items():
         isolated_nodes = list(nx.isolates(l_graph))
         l_graph.remove_nodes_from(isolated_nodes)
+    if net.is_directed(): raise ValueError("Only undirected networks can be processed right now!")
     return net
 
 
@@ -227,11 +228,11 @@ def load_network(net_name: str) -> nd.MultilayerNetwork:
     elif net_name == EU_TRANSPORT_KLM:
         return get_eu_transportation_network(["KLM"])
     elif net_name == L2_COURSE_NET_1:
-        return nd.tpn.get_l2_course_net(node_features=True, edge_features=True, directed=False).snaps[0]
+        return nd.nets.get_l2_course_net(node_features=True, edge_features=True, directed=False).snaps[0]
     elif net_name == L2_COURSE_NET_2:
-        return nd.tpn.get_l2_course_net(node_features=True, edge_features=True, directed=False).snaps[1]
+        return nd.nets.get_l2_course_net(node_features=True, edge_features=True, directed=False).snaps[1]
     elif net_name == L2_COURSE_NET_3:
-        return nd.tpn.get_l2_course_net(node_features=True, edge_features=True, directed=False).snaps[2]
+        return nd.nets.get_l2_course_net(node_features=True, edge_features=True, directed=False).snaps[2]
     elif net_name == LAZEGA:
         return get_lazega_network()
     elif net_name == ER1:
@@ -253,5 +254,5 @@ def load_network(net_name: str) -> nd.MultilayerNetwork:
     elif net_name == TIMIK1Q2009:
         return get_timik1q2009_network()
     elif net_name == TOY_NETWORK:
-        return nd.mln.functions.get_toy_network_piotr()  # TODO
+        return nd.nets.get_toy_network_piotr()
     raise AttributeError(f"Unknown network: {net_name}")
