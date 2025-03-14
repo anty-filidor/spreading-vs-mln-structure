@@ -170,6 +170,6 @@ def pretty_plots(workdir: Path) -> None:
 
 
 if __name__ == "__main__":
-    workdir = Path(__file__).parent.parent.parent / "data/multi_abcd/correlations"
-    # main(workdir)
+    workdir = Path(__file__).parent.parent.parent / "data/nets_properties/correlations_verbose"
+    main(workdir)
     pretty_plots(workdir)

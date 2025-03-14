@@ -1,5 +1,4 @@
-
-import time
+"""Functions to infer configuration parameters of the existing network."""
 
 import juliacall  # this is added to silent a warning raised by importing both torch an juliacall
 import networkx as nx
@@ -89,7 +88,7 @@ def get_r(net: nd.MultilayerNetwork, seed: int | None = None) -> dict[str, float
 
 
 def get_layer_params(net: nd.MultilayerNetwork) -> pd.DataFrame:
-    """Infere layers' parameters used by MLNABCD for a given network."""
+    """infer layers' parameters used by MLNABCD for a given network."""
     q, gamma_delta_Delta, beta_s_S_xi = {}, {}, {}
     tau = get_tau(net, alpha=None)
     r = get_r(net, seed=RNG_SEED)
@@ -114,46 +113,43 @@ def get_layer_params(net: nd.MultilayerNetwork) -> pd.DataFrame:
     return params_df.round(3).replace(0.0, 0.001)
 
 
-RNG_SEED = 42
-NET_NAME = "aucs"
+if __name__ == "__main__":
 
-set_rng_seed(seed=RNG_SEED)
+    RNG_SEED = 42
+    NET_NAME = "aucs"
 
+    set_rng_seed(seed=RNG_SEED)
+    ref_net = load_network(NET_NAME, as_tensor=False)
 
-t_start = time.time()
-ref_net = load_network(NET_NAME, as_tensor=False)
-t_end = time.time()
-print(f"Loaded in {t_end - t_start} seconds.")
+    mapping_dict = {l_name: l_idx for l_idx, l_name in enumerate(sorted(ref_net.layers), 1)}
 
+    # infer edges' correlation matrix
+    edges_cor = get_edges_cor(net=ref_net)
+    print(edges_cor)
+    edges_cor = edges_cor.rename(mapping_dict, axis=0)
+    edges_cor = edges_cor.rename(mapping_dict, axis=1)
+    edges_cor.to_csv("ref_edges_cor.csv")
 
-mapping_dict = {l_name: l_idx for l_idx, l_name in enumerate(sorted(ref_net.layers), 1)}
+    # infer layers' parameters
+    layer_params = get_layer_params(net=ref_net)
+    print(layer_params)
+    layer_params = layer_params.rename(mapping_dict, axis=0)
+    layer_params.to_csv("ref_layer_params.csv", index=False)
 
-edges_cor = get_edges_cor(net=ref_net)
-print(edges_cor)
-edges_cor = edges_cor.rename(mapping_dict, axis=0)
-edges_cor = edges_cor.rename(mapping_dict, axis=1)
-edges_cor.to_csv("ref_edges_cor.csv")
+    # load configuration
+    mln_config = MLNConfig(
+        seed=RNG_SEED,
+        n=ref_net.get_actors_num(),
+        edges_cor="ref_edges_cor.csv",
+        layer_params="ref_layer_params.csv",
+        d_max_iter=1000,
+        c_max_iter=1000,
+        t=100,
+        eps=0.01,
+        d=2,
+        edges_filename="./edges.dat",
+        communities_filename="./communities.dat",
+    )
 
-layer_params = get_layer_params(net=ref_net)
-print(layer_params)
-layer_params = layer_params.rename(mapping_dict, axis=0)
-layer_params.to_csv("ref_layer_params.csv", index=False)
-
-
-# load from code
-mln_config = MLNConfig(
-    seed=RNG_SEED,
-    n=ref_net.get_actors_num(),
-    edges_cor="ref_edges_cor.csv",
-    layer_params="ref_layer_params.csv",
-    d_max_iter=1000,
-    c_max_iter=1000,
-    t=100,
-    eps=0.01,
-    d=2,
-    edges_filename="./edges.dat",
-    communities_filename="./communities.dat",
-)
-
-# then, generate a network
-MLNABCDGraphGenerator()(config=mln_config)
+    # generate a network
+    MLNABCDGraphGenerator()(config=mln_config)

@@ -21,7 +21,7 @@ networks = [
 
 if __name__ == "__main__":
         
-    workdir = Path(__file__).parent.parent.parent / "data/multi_abcd/degree_sequences"
+    workdir = Path(__file__).parent.parent.parent / "data/nets_properties/degree_sequences"
     workdir.mkdir(exist_ok=True, parents=True)
 
     for net_name in sorted(networks):
