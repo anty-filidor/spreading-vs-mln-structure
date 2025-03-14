@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 
-
 def align_layers(
     net: nd.MultilayerNetwork,
     l1_name: str,

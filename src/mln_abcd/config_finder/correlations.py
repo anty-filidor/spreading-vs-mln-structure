@@ -7,7 +7,11 @@ from scipy.stats import kendalltau
 from sklearn.metrics import adjusted_mutual_info_score
 
 
-def degree_crosslayer_correlation(graph_1: nx.Graph, graph_2: nx.Graph, alpha: float | None = 0.05) -> float:
+def degree_crosslayer_correlation(
+    graph_1: nx.Graph,
+    graph_2: nx.Graph,
+    alpha: float | None = 0.05,
+) -> float:
     _l1_deg = dict(graph_1.degree())
     _l2_deg = dict(graph_2.degree())
     df_deg = pd.DataFrame({"graph_1": _l1_deg, "graph_2": _l2_deg}).sort_index()
@@ -54,8 +58,8 @@ def partitions_correlation(
 
 
 def edges_r(graph_1: nx.Graph, graph_2: nx.Graph) -> float:
-    graph_1_edges = set(graph_1.edges)
-    graph_2_edges = set(graph_2.edges)
-    if min(len(graph_1_edges), len(graph_2_edges)) == 0:
+    g1_edges = set(graph_1.edges)
+    g2_edges = set(graph_2.edges)
+    if min(len(g1_edges), len(g2_edges)) == 0:
            return None
-    return len(graph_1_edges.intersection(graph_2_edges)) / min(len(graph_1_edges), len(graph_2_edges))
+    return len(g1_edges.intersection(g2_edges)) / min(len(g1_edges), len(g2_edges))

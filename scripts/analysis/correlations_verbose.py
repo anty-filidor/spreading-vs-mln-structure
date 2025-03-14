@@ -11,7 +11,7 @@ import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 
-from src.multi_abcd import correlations, helpers
+from src.mln_abcd.config_finder import correlations, helpers
 from src.loaders.net_loader import load_network
 
 

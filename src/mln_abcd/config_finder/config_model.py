@@ -6,8 +6,8 @@ import numpy as np
 import powerlaw
 from scipy.stats import kendalltau
 
-from src.multi_abcd import correlations
-from src.multi_abcd.helpers import get_degree_sequence, prepare_layer_pairs
+from src.mln_abcd.config_finder import correlations
+from src.mln_abcd.config_finder.helpers import get_degree_sequence, prepare_layer_pairs
 
 
 def get_q(net: nx.Graph, num_actors: int) -> float:

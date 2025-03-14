@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from src.loaders.net_loader import load_network
-from src.multi_abcd.helpers import get_degree_sequence
+from src.mln_abcd.config_finder.helpers import get_degree_sequence
 
 
 networks = [

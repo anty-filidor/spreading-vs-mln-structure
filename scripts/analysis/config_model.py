@@ -1,7 +1,6 @@
 """Functions to infer configuration parameters of the existing network."""
 
 import juliacall  # this is added to silent a warning raised by importing both torch an juliacall
-import networkx as nx
 import network_diffusion as nd
 import pandas as pd
 
