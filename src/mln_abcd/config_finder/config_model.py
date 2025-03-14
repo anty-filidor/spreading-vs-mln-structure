@@ -24,9 +24,9 @@ def get_tau(net: nd.MultilayerNetwork, alpha: float | None = 0.05) -> dict[str, 
     Get correlations between node labels and their degrees.
 
     Note, that due to multilaterance of the network, the routine first converts labels of nodes
-    from the first layer so that the correlation is maximal (a node with the maximal degree gets the
-    highest ID) and then it applies these labels to compute correlations in remaining layers. It 
-    also computes correlations only for nodes with positive degree.  
+    from the first (alphabetically) layer, in a way to maximise the correlation (a node with the
+    maximal degree has assigned the highest ID). Then it uses these labels in computations of the
+    correlations in remaining layers. In addition it considers only nodes with a positive degree.  
     """
     net = net.to_multiplex()[0]
     layer_names = sorted(list(net.layers))
@@ -59,9 +59,9 @@ def get_r(net: nd.MultilayerNetwork, seed: int | None = None) -> dict[str, float
     """
     Get correlations between partitions.
     
-    Nota, that due to impossibility to reverse the process of creating partitions by MLNABCD, this
-    function only approximates the correlations by treating the first (alphabetically) layer of the
-    network as the reference one.   
+    Note, that due to impossibility to reverse the process of creating partitions by MLNABCD, this
+    function only approximates the correlations as follows. It takes the first (alphabetically)
+    layer of the network as a reference. Then it uses it to compute correlations with other layers.
     """
     net = net.to_multiplex()[0]
     layer_names = sorted(list(net.layers))
