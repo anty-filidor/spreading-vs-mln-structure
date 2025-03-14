@@ -13,7 +13,7 @@ from src.utils import set_rng_seed
 NETWORKS = [
     "arxiv_netscience_coauthorship",
     "aucs",
-    "cannes",
+    # "cannes",  # TODO: compute it on the server - it's too heavy
     "ckm_physicians",
     # "eu_transportation",  # TODO: too big errors for this network!
     "l2_course_net_1",
