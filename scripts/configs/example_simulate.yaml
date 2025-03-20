@@ -61,4 +61,4 @@ io:
   # ranking_path: "_example_results/rankings"
   full_output_frequency: -1  # freq. of logging very detailed data form simulated cases
   compress_to_zip: True  # wether compress ot zip "detailed_logs" and "rankings"
-  out_dir: "./example_results"  # dir to save results in, to send them to hell use e.g. "/dev/null" 
+  out_dir: "./examples/simulate"  # dir to save results, to send them to hell use e.g. "/dev/null" 

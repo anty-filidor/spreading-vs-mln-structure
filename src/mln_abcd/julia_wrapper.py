@@ -212,23 +212,28 @@ class MLNABCDGraphGenerator:
 
 if __name__ == "__main__":
 
+    from pathlib import Path
+    
+    out_dir = Path("./examples/generate")
+    out_dir.mkdir(exist_ok=True, parents=True)
+
     # load from code
     mln_config = MLNConfig(
         seed=42,
         n=1000,
-        edges_cor="scripts/configs/example_generate/edges_cor.csv",
-        layer_params="scripts/configs/example_generate/layer_params.csv",
+        edges_cor="scripts/configs/example_generate/edges.csv",
+        layer_params="scripts/configs/example_generate/layers.csv",
         d_max_iter=1000,
         c_max_iter=1000,
         t=100,
         eps=0.01,
         d=2,
-        edges_filename="./edges.dat",
-        communities_filename="./communities.dat",
+        edges_filename=str(out_dir / "edges.dat"),
+        communities_filename=str(out_dir / "communities.dat"),
     )
 
-    # # or from files
-    mln_config = MLNConfig.from_yaml("scripts/configs/example_generate/mln_config.yaml")
+    # or from files
+    # mln_config = MLNConfig.from_yaml("scripts/configs/example_generate/mln_config.yaml")
 
     # then, generate a network
     MLNABCDGraphGenerator()(config=mln_config)

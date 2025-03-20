@@ -1,0 +1,24 @@
+run:
+  experiment_type: "generate"
+  rng_seed: 43  # seed of the random numbers generator (to make results reproducible), "" no seeding
+
+mln_config:
+  n: 1000 # number of actors
+  # desired edges correlation; if set to:
+  #   empty string, an edge correlation step is omitted,
+  #   val. in <0.0;1.0>, all pairwise correlations between layers will be adjusted to the given val.
+  #   filename with .csv extension, correlation matrix will be loaded from a specified file
+  edges_cor: scripts/configs/example_generate/edges.csv
+  layer_params: scripts/configs/example_generate/layers.csv # parameters for each layer
+  d_max_iter: 1000 # maximum number of iterations for sampling degrees
+  c_max_iter: 1000 # maximum number of iterations for sampling cluster sizes
+  t: 100 # number of batches for edge rewiring
+  eps: 0.05 # percentage of edges to be rewired in each rewiring batch
+  d: 2 # dimensionality of latent space
+  edges_filename: edges.dat  # name of file for output edges
+  communities_filename: communities.dat  # name of file for output communities
+
+generator:
+  repetitions: 5  # number of networks to generate from the given congituraiton
+  out_dir: "./examples/generate" # directory to save networks in
+
