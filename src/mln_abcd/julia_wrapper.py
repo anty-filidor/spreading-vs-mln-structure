@@ -8,13 +8,12 @@ import numpy as np
 import pandas as pd
 import yaml
 
-
 @dataclass
 class MLNConfig:
     """
     A wrapper for class for class for jl.MLNABCDGraphGenerator.MLNConfig.
 
-    TODO: we can get rid of storing a part of the config in files (see 
+    TODO: we can get rid of storing a part of the config in files (see commented out code and:
     https://github.com/KrainskiL/MLNABCDGraphGenerator.jl/blob/main/src/auxiliary.jl#L19)
     """
     seed: int
@@ -44,6 +43,7 @@ class MLNConfig:
     # edges_cor_matrix: np.ndarray
 
     def __post_init__(self) -> None:
+        self._rng = np.random.default_rng(seed=self.seed)
         assert isinstance(self.seed, int)
         assert isinstance(self.n, int)
         assert isinstance(self.edges_cor, str)
@@ -152,9 +152,10 @@ class MLNABCDGraphGenerator:
         except JuliaError:
             self.install_julia_dependencies()
 
-        # Load config
+        # Load config. Since julia is called each time as a new process, we use a following
+        # workaround to generate random, yet repetitive as a sequence, results
         config = jl.MLNABCDGraphGenerator.MLNConfig(
-            config.seed,
+            int(config._rng.random() * 1000),
             config.n,
             config.edges_cor,
             config.layer_params,
@@ -227,9 +228,9 @@ if __name__ == "__main__":
     )
     mln_config.to_yaml("aaa.yaml")
 
-    # or from files
+    # # or from files
     mln_config = MLNConfig.from_yaml("scripts/configs/example_generate/mln_config.yaml")
 
     # then, generate a network
     MLNABCDGraphGenerator()(config=mln_config)
-    MLNABCDGraphGenerator()(config=mln_config)  # TODO: rng overfixed
+
