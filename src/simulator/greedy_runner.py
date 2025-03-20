@@ -67,7 +67,7 @@ def handle_step(
         greedy_ranking.append(best_actor)
         results.append(
             SimulationFullResult.enhance_SPR(
-                best_spr, net.name, proto, eval_seed_budget, mi, ss_method
+                best_spr, net.rich_name, proto, eval_seed_budget, mi, ss_method
             )
         )
     

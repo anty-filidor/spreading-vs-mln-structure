@@ -12,7 +12,7 @@ from src.utils import set_rng_seed
 @pytest.fixture
 def tcase_ranking_config():
     return {
-        "run": {"experiment_type": "simulate", "random_seed": 1995},
+        "run": {"experiment_type": "simulate", "rng_seed": 1995},
         "parameter_space": {
             "protocols": ["OR", "AND"],
             "mi_values": [0.9, 0.65, 0.1],
@@ -33,7 +33,7 @@ def tcase_ranking_config():
 @pytest.fixture
 def tcase_greedy_config():
     return {
-        "run": {"experiment_type": "simulate", "random_seed": 1959},
+        "run": {"experiment_type": "simulate", "rng_seed": 1959},
         "parameter_space": {
             "protocols": ["OR", "AND"],
             "mi_values": [0.5, 0.55, 0.6, 0.65, 0.7],
@@ -96,8 +96,9 @@ def check_integrity(test_df: pd.DataFrame) -> None:
 def test_e2e(tcase_config, tcase_csv_names, request, tmpdir):
     config = request.getfixturevalue(tcase_config)
     csv_names = request.getfixturevalue(tcase_csv_names)
+    tmpdir = "aaaa"
     config["io"]["out_dir"] = str(tmpdir)
-    set_rng_seed(config["run"]["random_seed"])
+    set_rng_seed(config["run"]["rng_seed"])
     simulate.run_experiments(config)
     compare_results(Path("data/test"), Path(tmpdir), csv_names)
 

@@ -237,4 +237,3 @@ if __name__ == "__main__":
 
     # then, generate a network
     MLNABCDGraphGenerator()(config=mln_config)
-

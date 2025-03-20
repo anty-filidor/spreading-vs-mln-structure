@@ -1,6 +1,5 @@
 """Main runner of the generator."""
 
-from pathlib import Path
 from typing import Any
 
 import juliacall
@@ -8,6 +7,7 @@ import numpy as np
 from tqdm import tqdm
 
 from src.mln_abcd.julia_wrapper import MLNConfig, MLNABCDGraphGenerator
+from src.params_handler import create_out_dir
 
 
 def run_experiments(config: dict[str, Any]) -> None:
@@ -17,11 +17,9 @@ def run_experiments(config: dict[str, Any]) -> None:
     mln_config = MLNConfig(**_mln_config)
 
     repetitions = config["generator"]["repetitions"]
-    out_dir = Path(config["generator"]["out_dir"])
+    out_dir = create_out_dir(config["generator"]["out_dir"])
     e_name, e_stem = config["mln_config"]["edges_filename"].split(".")
     c_name, c_stem = config["mln_config"]["communities_filename"].split(".")
-
-    out_dir.mkdir(exist_ok=True, parents=True)
 
     p_bar = tqdm(np.arange(repetitions), desc="", leave=False, colour="green")
     for repetition in p_bar:

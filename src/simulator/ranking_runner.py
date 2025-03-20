@@ -31,5 +31,7 @@ def handle_step(
         patience=patience,
         out_dir=out_dir,
     )
-    step_sfr = SimulationFullResult.enhance_SPR(step_spr, net.name, proto, budget[1], mi, ss_method)
+    step_sfr = SimulationFullResult.enhance_SPR(
+        step_spr, net.rich_name, proto, budget[1], mi, ss_method
+    )
     return [step_sfr]

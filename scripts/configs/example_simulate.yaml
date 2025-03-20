@@ -30,11 +30,15 @@ parameter_space:  # parameters in a form of lists. the simulator will eval. thei
     "v_rnk_m",
   ]
   networks: [
+    # mlnabcd^examples/generate/edges_2.dat,  # there is a regex for nets generated with mlnabcd
+    # mlnabcd^examples/generate/*,
     # "arxiv_netscience_coauthorship",
     "aucs",
+    # "cannes",
     # "ckm_physicians",
     # "eu_transportation",
     # "eu_transport_klm",
+    # "fmri74",
     # "lazega",
     # "l2_course_net_1",
     # "l2_course_net_2",
@@ -58,7 +62,7 @@ simulator:
 
 io:
   ranking_path: null  # path to read rankings of actors from (null to compute them before exper.)
-  # ranking_path: "_example_results/rankings"
+  # ranking_path: "examples/simulate/rankings"
   full_output_frequency: -1  # freq. of logging very detailed data form simulated cases
   compress_to_zip: True  # wether compress ot zip "detailed_logs" and "rankings"
   out_dir: "./examples/simulate"  # dir to save results, to send them to hell use e.g. "/dev/null" 

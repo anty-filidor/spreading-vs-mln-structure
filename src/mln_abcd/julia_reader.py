@@ -13,7 +13,7 @@ def load_edgelist(edgelist_path: Path) -> nd.MultilayerNetwork:
     layer_graphs = {}
     for layer_name in layer_names:
         el_layer = edge_list.loc[edge_list["layer"] == layer_name]
-        layer_graphs[layer_name] = nx.from_pandas_edgelist(el_layer)
+        layer_graphs[str(layer_name)] = nx.from_pandas_edgelist(el_layer)
     return nd.MultilayerNetwork(layers=layer_graphs)
 
 

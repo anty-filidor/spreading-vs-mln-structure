@@ -1,7 +1,8 @@
 import argparse
 import yaml
 
-from src import generator, simulator
+from src.generator import run_experiments as re_generator
+from src.simulator.simulate import run_experiments as re_simulator
 from src.utils import set_rng_seed
 
 
@@ -12,8 +13,8 @@ def parse_args(*args):
         help="Experiment config file (default: config.yaml).",
         nargs="?",
         type=str,
-        # default="scripts/configs/example_simulate.yaml",
-        default="scripts/configs/example_generate/config.yaml",
+        default="scripts/configs/example_simulate.yaml",
+        # default="scripts/configs/example_generate/config.yaml",
     )
     return parser.parse_args(*args)
 
@@ -30,9 +31,9 @@ if __name__ == "__main__":
         set_rng_seed(config["run"]["random_seed"])
 
     if (experiment_type := config["run"].get("experiment_type")) == "simulate":
-        entrypoint = simulator.simulate.run_experiments
+        entrypoint = re_simulator
     elif experiment_type == "generate":
-        entrypoint = generator.run_experiments
+        entrypoint = re_generator
     else:
         raise ValueError(f"Unknown experiment type {experiment_type}")
 
