@@ -1,7 +1,7 @@
 import argparse
 import yaml
 
-from src import main
+from src.simulators import simulate
 from src.utils import set_rng_seed
 
 
@@ -12,19 +12,29 @@ def parse_args(*args):
         help="Experiment config file (default: config.yaml).",
         nargs="?",
         type=str,
-        default="experiments/configs/example_config.yaml",
+        default="scripts/configs/example_simulate.yaml",
+        # default="scripts/configs/example_generate.yaml",
     )
     return parser.parse_args(*args)
 
 
 if __name__ == "__main__":
+
     args = parse_args()
-    
     with open(args.config, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
+    print(f"Loaded config: {config}")
+    
     if random_seed := config["run"].get("random_seed"):
         print(f"Setting randomness seed as {random_seed}!")
         set_rng_seed(config["run"]["random_seed"])
-    print(f"Loaded config: {config}")
 
-    main.run_experiments(config)
+    if (experiment_type := config["run"].get("experiment_type")) == "simulate":
+        entrypoint = simulate.run_experiments
+    elif experiment_type == "generate":
+        runner = main_evaluator
+    else:
+        raise ValueError(f"Unknown experiment type {experiment_type}")
+
+    print(f"Inferred experiment type as: {experiment_type}")
+    entrypoint(config)
