@@ -96,7 +96,6 @@ def check_integrity(test_df: pd.DataFrame) -> None:
 def test_e2e(tcase_config, tcase_csv_names, request, tmpdir):
     config = request.getfixturevalue(tcase_config)
     csv_names = request.getfixturevalue(tcase_csv_names)
-    tmpdir = "aaaa"
     config["io"]["out_dir"] = str(tmpdir)
     set_rng_seed(config["run"]["rng_seed"])
     simulate.run_experiments(config)

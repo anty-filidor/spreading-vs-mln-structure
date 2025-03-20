@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     for net_name in sorted(NETWORKS):
         print(net_name)
-        ref_net = load_network(net_name, as_tensor=False)
+        ref_net = load_network(net_name)[(net_name, net_name)]
         layers_mapping = {l_name: l_idx for l_idx, l_name in enumerate(sorted(ref_net.layers), 1)}
 
         # infer edges' correlation matrix
