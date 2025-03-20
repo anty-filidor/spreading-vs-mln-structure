@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.simulators import simulate
+from src.simulator import simulate
 from src.utils import set_rng_seed
 
 

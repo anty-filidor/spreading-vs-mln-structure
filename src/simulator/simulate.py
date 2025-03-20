@@ -7,7 +7,7 @@ from typing import Any
 from tqdm import tqdm
 
 from src import params_handler, result_handler, utils
-from src.simulators  import greedy_runner, ranking_runner
+from src.simulator import greedy_runner, ranking_runner
 
 
 DET_LOGS_DIR = "detailed_logs"

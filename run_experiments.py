@@ -1,7 +1,7 @@
 import argparse
 import yaml
 
-from src.simulators import simulate
+from src.simulator import simulate
 from src.utils import set_rng_seed
 
 

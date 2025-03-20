@@ -6,7 +6,7 @@ import network_diffusion as nd
 
 from src.params_handler import Network
 from src.result_handler import SimulationFullResult
-from src.simulators.simulation_step import experiment_step
+from src.simulator.simulation_step import experiment_step
 
 
 def handle_step(

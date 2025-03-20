@@ -19,14 +19,3 @@ def load_communities(communities_path: Path) -> pd.DataFrame:
     communities = pd.read_csv(communities_path, sep="\t", names=["community", "layer"])
     communities.index.name = "actor"
     return communities
-
-
-net = load_edgelist("edgelist.dat")
-print(net)
-
-comms = load_communities("communities.dat")
-print(comms)
-
-"""
-- 
-"""

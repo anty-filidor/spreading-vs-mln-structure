@@ -226,7 +226,6 @@ if __name__ == "__main__":
         edges_filename="./edges.dat",
         communities_filename="./communities.dat",
     )
-    mln_config.to_yaml("aaa.yaml")
 
     # # or from files
     mln_config = MLNConfig.from_yaml("scripts/configs/example_generate/mln_config.yaml")
