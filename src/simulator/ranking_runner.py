@@ -6,7 +6,7 @@ import network_diffusion as nd
 
 from src.params_handler import Network
 from src.result_handler import SimulationFullResult
-from src.runners.simulation_step import experiment_step
+from src.simulator.simulation_step import experiment_step
 
 
 def handle_step(
@@ -31,5 +31,7 @@ def handle_step(
         patience=patience,
         out_dir=out_dir,
     )
-    step_sfr = SimulationFullResult.enhance_SPR(step_spr, net.name, proto, budget[1], mi, ss_method)
+    step_sfr = SimulationFullResult.enhance_SPR(
+        step_spr, net.rich_name, proto, budget[1], mi, ss_method
+    )
     return [step_sfr]

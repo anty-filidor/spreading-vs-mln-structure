@@ -6,7 +6,7 @@ import network_diffusion as nd
 
 from src.params_handler import Network
 from src.result_handler import SimulationFullResult, SimulationPartialResult
-from src.runners.simulation_step import experiment_step
+from src.simulator.simulation_step import experiment_step
 
 
 def handle_step(
@@ -67,7 +67,7 @@ def handle_step(
         greedy_ranking.append(best_actor)
         results.append(
             SimulationFullResult.enhance_SPR(
-                best_spr, net.name, proto, eval_seed_budget, mi, ss_method
+                best_spr, net.rich_name, proto, eval_seed_budget, mi, ss_method
             )
         )
     

@@ -3,4 +3,4 @@ outs:
   size: 344935
   nfiles: 31
   hash: md5
-  path: correlations
+  path: correlations_verbose

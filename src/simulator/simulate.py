@@ -1,13 +1,12 @@
 """Main runner of the simulator."""
 
 import yaml
-from pathlib import Path
 from typing import Any
 
 from tqdm import tqdm
 
 from src import params_handler, result_handler, utils
-from src.runners  import greedy_runner, ranking_runner
+from src.simulator import greedy_runner, ranking_runner
 
 
 DET_LOGS_DIR = "detailed_logs"
@@ -16,35 +15,35 @@ RANKINGS_DIR = "rankings"
 
 def run_experiments(config: dict[str, Any]) -> None:
 
+    # load networks, initialise ssms
+    nets = params_handler.load_networks(config["parameter_space"]["networks"])
+    ssms = params_handler.load_seed_selectors(config["parameter_space"]["ss_methods"])
+
     # get parameters of the simulation
     p_space, runner_type = params_handler.get_parameter_space(
-        protocols=config["model"]["protocols"],
-        seed_budgets=config["model"]["seed_budgets"],
-        mi_values=config["model"]["mi_values"],
-        networks=config["networks"],
-        ss_methods=config["model"]["ss_methods"],
+        protocols=config["parameter_space"]["protocols"],
+        seed_budgets=config["parameter_space"]["seed_budgets"],
+        mi_values=config["parameter_space"]["mi_values"],
+        networks=[(net.type, net.name) for net in nets],
+        ss_methods=config["parameter_space"]["ss_methods"],
     )
 
     # get parameters of the simulator
-    logging_freq = params_handler.get_logging_frequency(config["logging"]["full_output_frequency"])
-    max_epochs_num = 1000000000 if (_ := config["run"]["max_epochs_num"]) == -1 else _
-    patience = config["run"]["patience"]
-    ranking_path = config.get("ranking_path")
-    repetitions = config["run"]["repetitions"]
-    rng_seed = "_"if config["run"].get("random_seed") is None else config["run"]["random_seed"]
+    logging_freq = params_handler.get_logging_frequency(config["io"]["full_output_frequency"])
+    max_epochs_num = 1000000000 if (_ := config["simulator"]["max_epochs_num"]) == -1 else _
+    patience = config["simulator"]["patience"]
+    ranking_path = config["io"].get("ranking_path")
+    repetitions = config["simulator"]["repetitions"]
+    rng_seed = "_"if config["run"].get("rng_seed") is None else config["run"]["rng_seed"]
     step_handler = ranking_runner.handle_step if runner_type == "ranking" else greedy_runner.handle_step
 
-    # load networks, initialise ssms
-    nets = params_handler.load_networks(config["networks"])
-    ssms = params_handler.load_seed_selectors(config["model"]["ss_methods"])
-
     # prepare output directories and determine how to store results
-    out_dir = params_handler.create_out_dir(config["logging"]["out_dir"])
+    out_dir = params_handler.create_out_dir(config["io"]["out_dir"])
     det_dir = out_dir / DET_LOGS_DIR
     det_dir.mkdir(exist_ok=True, parents=True)
     rnk_dir = out_dir / RANKINGS_DIR
     rnk_dir.mkdir(exist_ok=True, parents=True)
-    compress_to_zip = config["logging"]["compress_to_zip"]
+    compress_to_zip = config["io"]["compress_to_zip"]
 
     # save the config
     config["git_sha"] = utils.get_recent_git_sha()
@@ -73,37 +72,39 @@ def run_experiments(config: dict[str, Any]) -> None:
         # start simulations
         p_bar = tqdm(p_space, desc="", leave=False, colour="green")
         for idx, investigated_case in enumerate(p_bar):
-            proto, budget, mi, net_name, ss_method = investigated_case
-            p_bar.set_description_str(
-                utils.get_case_name_rich(
-                    rep_idx=rep,
-                    reps_nb=repetitions,
-                    case_idx=idx,
-                    cases_nb=len(p_bar),
-                    protocol=proto,
-                    mi_value=mi,
-                    budget=budget[1],
-                    net_name=net_name,
-                    ss_name=ss_method,
-                )
-            )
-            ic_name = f"{utils.get_case_name_base(proto, mi, budget[1], ss_method, net_name)}--ver-{ver}"
+            proto, budget, mi, net_type_name, ss_method = investigated_case
             try:
-                net = [net for net in nets if net.name == net_name][0]
-                ranking = rankings[(net.name, ss_method)]
+                net = [
+                    net for net in nets if 
+                    net.type == net_type_name[0] and net.name == net_type_name[1]
+                ][0]
+                p_bar.set_description_str(
+                    utils.get_case_name_rich(
+                        rep_idx=rep,
+                        reps_nb=repetitions,
+                        case_idx=idx,
+                        cases_nb=len(p_bar),
+                        protocol=proto,
+                        mi_value=mi,
+                        budget=budget[1],
+                        net_name=net.rich_name,
+                        ss_name=ss_method,
+                    )
+                )
+                ic_name = f"{utils.get_case_name_base(proto, mi, budget[1], ss_method, net.rich_name)}--ver-{ver}"
                 investigated_case_results = step_handler(
                     proto=proto, 
                     budget=budget,
                     mi=mi,
                     net=net,
                     ss_method=ss_method,
-                    ranking=ranking,
+                    ranking=rankings[(net.rich_name, ss_method)],
                     max_epochs_num=max_epochs_num,
                     patience=patience,
                     out_dir=det_dir / ic_name if rep % logging_freq == 0 else None
                 )
                 rep_results.extend(investigated_case_results)
-            except BaseException:
+            except BaseException as e:
                 print(f"\nExperiment failed for case: {ic_name}")
                 raise e
         

@@ -1,14 +1,17 @@
-"""Estimate parameters of the configuration model."""
+"""Plot verbose correlations between layers of the networks."""
 
 from pathlib import Path
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import network_diffusion as nd
+import numpy as np
 import pandas as pd
+import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 
-from src.multi_abcd import configuration_model, correlations, helpers
+from src.mln_abcd.config_finder import correlations, helpers
 from src.loaders.net_loader import load_network
 
 
@@ -25,6 +28,62 @@ NETS_MAPPING = {
 }
 
 
+def prepare_ticklabels(series: pd.Index) -> Union[np.ndarray, str]:
+    try:
+        return series.to_numpy().round(2)
+    except:
+        return "auto"
+
+
+def plot_heatmap(
+    vis_df: pd.DataFrame,
+    heatmap_ax: plt.Axes,
+    bar_ax: plt.Axes,
+    title: str,
+    vrange=(-1., 1.),
+    cmap="GnBu_r", # "RdYlGn",
+    mask: Optional[pd.DataFrame] = None,
+    fmt: Optional[str] = ".3f",
+) -> None:
+    if len(vis_df.columns) >= 5:
+        annot = False
+        font_size = None
+        yticklabels=()
+        xticklabels=()
+    else:
+        annot = True
+        font_size = 18
+        yticklabels=prepare_ticklabels(vis_df.index)
+        xticklabels=prepare_ticklabels(vis_df.columns)
+    
+    title_size = 22
+
+    sns.heatmap(
+        vis_df,
+        ax=heatmap_ax,
+        cbar_ax=bar_ax,
+        cmap=cmap,
+        vmin=vrange[0],
+        vmax=vrange[1],
+        annot=annot,
+        annot_kws={"size": font_size},
+        fmt=fmt,
+        square=True,
+        yticklabels=yticklabels,
+        xticklabels=xticklabels,
+        linewidth=.5,
+        mask=mask,
+        cbar= True if bar_ax is not None else False,
+    )
+
+    heatmap_ax.set_title(title, fontdict={"size": title_size})
+    heatmap_ax.set_xticklabels(heatmap_ax.get_xticklabels(), fontsize=font_size)
+    heatmap_ax.set_yticklabels(heatmap_ax.get_yticklabels(), fontsize=font_size)
+    # heatmap_ax.invert_yaxis()
+    # heatmap_ax.tick_params(axis="x", rotation=80)
+    bar_ax.tick_params(labelsize=title_size)
+
+
 def compute_statistics(net: nd.MultilayerNetwork, mode: str) -> dict[str, list[dict]]:
     
     print("\tComputing statistics")
@@ -32,9 +91,9 @@ def compute_statistics(net: nd.MultilayerNetwork, mode: str) -> dict[str, list[d
 
     for la_name, lb_name in helpers.prepare_layer_pairs(net.layers.keys()):
         print("\t\t", la_name, lb_name)
-        aligned_layers = correlations.align_layers(net, la_name, lb_name, mode)
+        aligned_layers = helpers.align_layers(net, la_name, lb_name, mode)
 
-        degree_stat = correlations.degrees_correlation(
+        degree_stat = correlations.degree_crosslayer_correlation(
             graph_1=aligned_layers[la_name], graph_2=aligned_layers[lb_name], alpha=None
         )
         degree_stats.append({(la_name, lb_name): degree_stat})
@@ -75,9 +134,9 @@ def plot_statistics(statistics: dict[str, pd.DataFrame], net_name: str) -> Figur
     )
     fig.tight_layout(pad=2.5, rect=(0.05, 0.05, 0.95, 0.95))
 
-    helpers.plot_heatmap(statistics["degree"], ax[0], ax[-1], "degrees")
-    helpers.plot_heatmap(statistics["partition"], ax[1], ax[-1], "partitions")
-    helpers.plot_heatmap(statistics["edges"], ax[2], ax[-1], "edges R")
+    plot_heatmap(statistics["degree"], ax[0], ax[-1], "degrees")
+    plot_heatmap(statistics["partition"], ax[1], ax[-1], "partitions")
+    plot_heatmap(statistics["edges"], ax[2], ax[-1], "edges R")
 
     fig.suptitle(net_name)
 
@@ -86,7 +145,7 @@ def plot_statistics(statistics: dict[str, pd.DataFrame], net_name: str) -> Figur
 
 def main(workdir: Path) -> None:
 
-    mode = "destructive"  # "additive" not uset in the paper
+    mode = "destructive"  # "additive" not used in the paper
     networks = list(NETS_MAPPING.keys())
 
     workdir.mkdir(exist_ok=True, parents=True)
@@ -95,15 +154,12 @@ def main(workdir: Path) -> None:
     for net_name in sorted(networks):
 
         print(net_name)
-        net = load_network(net_name, as_tensor=False)
-        if net.is_directed(): raise ValueError(
-            "Only undirected networks can be processed right now!"
-        )
+        net: nd.MultilayerNetwork = load_network(net_name)[(net_name, net_name)]
 
         statistics_raw = compute_statistics(net, mode)
         statistics_df = convert_to_correlation_matrix(statistics_raw)
-        n = configuration_model.get_nb_actors(net)
-        l = configuration_model.get_nb_layers(net)
+        n = net.get_actors_num()
+        l = len(net.layers)
 
         save_statistics(statistics_df, net_name, workdir)
         figure = plot_statistics(statistics_df, f"network: {net_name}, n={n}, l={l}")
@@ -133,7 +189,7 @@ def plot_pretty_statistics(stats_df: dict[str, pd.DataFrame], stats_name: str | 
     )
     fig.tight_layout(pad=.0, rect=(.0, .0, .97, .95))
     for net_idx, (net_name, net_stat) in enumerate(stats_df.items()):
-        helpers.plot_heatmap(
+        plot_heatmap(
             vis_df=net_stat,
             heatmap_ax=ax[net_idx],
             bar_ax=ax[-1],
@@ -170,6 +226,6 @@ def pretty_plots(workdir: Path) -> None:
 
 
 if __name__ == "__main__":
-    workdir = Path(__file__).parent.parent.parent / "data/multi_abcd/correlations"
-    # main(workdir)
+    workdir = Path(__file__).parent.parent.parent / "data/nets_properties/correlations_verbose"
+    main(workdir)
     pretty_plots(workdir)

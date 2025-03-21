@@ -1,13 +1,13 @@
 """A loader for multilayer networks stored in the dataset."""
 
 from functools import wraps
+from glob import glob
 from pathlib import Path
 from typing import Callable
 
 import pandas as pd
 import network_diffusion as nd
 import networkx as nx
-import torch
 
 from src.loaders.constants import (
     MLN_RAW_DATA_PATH,
@@ -33,8 +33,12 @@ from src.loaders.constants import (
     SF5,
     TIMIK1Q2009,
     TOY_NETWORK,
+    MLNABCD_PREFIX,
+    WILDCARD
 )
 from src.loaders.fmri74 import read_fmri74
+from src.mln_abcd.julia_reader import load_edgelist
+
 
 def _network_from_pandas(path):
     df = pd.read_csv(path, names=["node_1", "node_2", "layer"])
@@ -177,81 +181,90 @@ def get_timik1q2009_network():
     return nd.MultilayerNetwork.from_nx_layers(layer_graphs, layer_names)
 
 
+def read_mlnabcd_networks(convolved_name: str) -> dict[tuple[str, str], nd.MultilayerNetwork]:
+    net_paths_regex = convolved_name.split(WILDCARD)[-1]
+    nets = {}
+    for net_path in glob(net_paths_regex):
+        net_path = Path(net_path)
+        net_graph = load_edgelist(net_path)
+        if net_graph.get_actors_num() == 0:
+            print(f"Inferred {net_path} as a non-network file.")
+            continue
+        nets[(str(net_path.parent), net_path.stem)] = net_graph
+    return nets
+
+
 def _prepare_network(net: nd.MultilayerNetwork) -> nd.MultilayerNetwork:
     for _, l_graph in net.layers.items():
         isolated_nodes = list(nx.isolates(l_graph))
         l_graph.remove_nodes_from(isolated_nodes)
+    if net.is_directed(): raise ValueError("Only undirected networks can be processed right now!")
     return net
 
 
 def prepare_network(load_networks_func: Callable) -> Callable:
-    """Decorate loader function so that it has no isolated nodes."""
+    """Remove isolated nodes from function."""
     @wraps(load_networks_func)
-    def wrapper(*args, **kwargs) -> nd.MultilayerNetwork :
-        net = load_networks_func(*args, **kwargs)
-        return _prepare_network(net)
+    def wrapper(*args, **kwargs) -> dict[str, nd.MultilayerNetwork]:
+        net_dict = load_networks_func(*args, **kwargs)
+        return {net_name: _prepare_network(net_graph) for net_name, net_graph in net_dict.items()}
     return wrapper
 
 
-def convert_to_torch(load_networks_func: Callable) -> Callable:
-    """Decorate loader function so that it can convert the network on the fly to the tensor repr."""
-    @wraps(load_networks_func)
-    def wrapper(
-        *args, as_tensor: bool, **kwargs
-    ) -> nd.MultilayerNetwork | nd.MultilayerNetworkTorch:
-        net = load_networks_func(*args, **kwargs)
-        if as_tensor:
-            device = "cuda:0" if torch.cuda.is_available() else "cpu"
-            return nd.MultilayerNetworkTorch.from_mln(net, device=device)
-        return net
-    return wrapper
-
-
-@convert_to_torch
 @prepare_network
-def load_network(net_name: str) -> nd.MultilayerNetwork:
-    if net_name == FMRI74:
-        return read_fmri74(network_dir=f"{MLN_RAW_DATA_PATH}/CONTROL_fmt", binary=True, thresh=0.5)
-    elif net_name == ARXIV_NETSCIENCE_COAUTHORSHIP:
-        return get_arxiv_network()
-    elif net_name == ARXIV_NETSCIENCE_COAUTHORSHIP_MATH:
-        return get_arxiv_network(["math.OC"])
-    elif net_name == AUCS:
-        return get_aucs_network()
-    elif net_name == CANNES:
-        return get_cannes_network()
-    elif net_name == CKM_PHYSICIANS:
-        return get_ckm_physicians_network()
-    elif net_name == EU_TRANSPORTATION:
-        return get_eu_transportation_network()
-    elif net_name == EU_TRANSPORT_KLM:
-        return get_eu_transportation_network(["KLM"])
-    elif net_name == L2_COURSE_NET_1:
-        return nd.tpn.get_l2_course_net(node_features=True, edge_features=True, directed=False).snaps[0]
-    elif net_name == L2_COURSE_NET_2:
-        return nd.tpn.get_l2_course_net(node_features=True, edge_features=True, directed=False).snaps[1]
-    elif net_name == L2_COURSE_NET_3:
-        return nd.tpn.get_l2_course_net(node_features=True, edge_features=True, directed=False).snaps[2]
-    elif net_name == LAZEGA:
-        return get_lazega_network()
-    elif net_name == ER1:
-        return get_er5_network(["l2"])
-    elif net_name == ER2:
-        return get_er2_network()
-    elif net_name == ER3:
-        return get_er3_network()
-    elif net_name == ER5:
-        return get_er5_network()
-    elif net_name == SF1:
-        return get_sf5_network(["l3"])
-    elif net_name == SF2:
-        return get_sf2_network()
-    elif net_name == SF3:
-        return get_sf3_network()
-    elif net_name == SF5:
-        return get_sf5_network()
-    elif net_name == TIMIK1Q2009:
-        return get_timik1q2009_network()
-    elif net_name == TOY_NETWORK:
-        return nd.mln.functions.get_toy_network_piotr()
-    raise AttributeError(f"Unknown network: {net_name}")
+def load_network(net_regex: str) -> dict[tuple[str, str], nd.MultilayerNetwork]:
+    if net_regex.startswith(MLNABCD_PREFIX):
+        return read_mlnabcd_networks(net_regex)
+    elif net_regex == FMRI74:
+        net_graph = read_fmri74(network_dir=f"{MLN_RAW_DATA_PATH}/CONTROL_fmt", binary=True, thresh=0.5)
+    elif net_regex == ARXIV_NETSCIENCE_COAUTHORSHIP:
+        net_graph = get_arxiv_network()
+    elif net_regex == ARXIV_NETSCIENCE_COAUTHORSHIP_MATH:
+        net_graph = get_arxiv_network(["math.OC"])
+    elif net_regex == AUCS:
+        net_graph = get_aucs_network()
+    elif net_regex == CANNES:
+        net_graph = get_cannes_network()
+    elif net_regex == CKM_PHYSICIANS:
+        net_graph = get_ckm_physicians_network()
+    elif net_regex == EU_TRANSPORTATION:
+        net_graph = get_eu_transportation_network()
+    elif net_regex == EU_TRANSPORT_KLM:
+        net_graph = get_eu_transportation_network(["KLM"])
+    elif net_regex == L2_COURSE_NET_1:
+        net_graph = nd.nets.get_l2_course_net(
+            node_features=True, edge_features=True, directed=False
+        ).snaps[0]
+    elif net_regex == L2_COURSE_NET_2:
+        net_graph = nd.nets.get_l2_course_net(
+            node_features=True, edge_features=True, directed=False
+        ).snaps[1]
+    elif net_regex == L2_COURSE_NET_3:
+        net_graph = nd.nets.get_l2_course_net(
+            node_features=True, edge_features=True, directed=False
+        ).snaps[2]
+    elif net_regex == LAZEGA:
+        net_graph = get_lazega_network()
+    elif net_regex == ER1:
+        net_graph = get_er5_network(["l2"])
+    elif net_regex == ER2:
+        net_graph = get_er2_network()
+    elif net_regex == ER3:
+        net_graph = get_er3_network()
+    elif net_regex == ER5:
+        net_graph = get_er5_network()
+    elif net_regex == SF1:
+        net_graph = get_sf5_network(["l3"])
+    elif net_regex == SF2:
+        net_graph = get_sf2_network()
+    elif net_regex == SF3:
+        net_graph = get_sf3_network()
+    elif net_regex == SF5:
+        net_graph = get_sf5_network()
+    elif net_regex == TIMIK1Q2009:
+        net_graph = get_timik1q2009_network()
+    elif net_regex == TOY_NETWORK:
+        net_graph = nd.nets.get_toy_network_piotr()
+    else:
+        raise AttributeError(f"Unknown network: {net_regex}")
+    return {(net_regex, net_regex): net_graph}

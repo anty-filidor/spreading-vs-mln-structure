@@ -12,6 +12,7 @@ from typing import Callable
 import network_diffusion as nd
 
 from src.loaders.net_loader import load_network
+from src.loaders.constants import WILDCARD
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -23,8 +24,17 @@ class JSONEncoder(json.JSONEncoder):
 
 @dataclass(frozen=True)
 class Network:
+    type: str
     name: str
-    graph: nd.MultilayerNetwork | nd.MultilayerNetworkTorch
+    graph: nd.MultilayerNetwork
+
+    @property
+    def rich_name(self) -> str:
+        _type = self.type.replace("/", ".")
+        _name = self.name.replace("/", ".")
+        if _type == _name:
+            return _type
+        return f"{_type}-{_name}"
 
 
 @dataclass(frozen=True)
@@ -37,7 +47,7 @@ def get_parameter_space(
     protocols: list[str],
     seed_budgets: list[float],
     mi_values: list[str],
-    networks: list[str],
+    networks: list[tuple[str, str]],
     ss_methods: list[str],
 ) -> tuple[list[tuple[str, tuple[int, int], float, str, str]], str]:
     runner_type = determine_runner(ss_methods)
@@ -50,7 +60,7 @@ def get_parameter_space(
 
 
 def determine_runner(ss_methods: list[str]):
-    ssm_prefixes = [ssm[:2] == "g^" for ssm in ss_methods]
+    ssm_prefixes = [ssm[:2] == f"g{WILDCARD}" for ssm in ss_methods]
     if all(ssm_prefixes):
         return "greedy"
     elif not any(ssm_prefixes):
@@ -78,7 +88,7 @@ def get_for_greedy(get_ss_func: Callable) -> Callable:
     """Decorate seed selection loader so that it can determine a base ranking for greedy."""
     @wraps(get_ss_func)
     def wrapper(selector_name: str) -> nd.seeding.BaseSeedSelector:
-        if selector_name[:2] == "g^":
+        if selector_name[:2] == f"g{WILDCARD}":
             return get_ss_func(selector_name[2:])
         return get_ss_func(selector_name)
     return wrapper
@@ -125,9 +135,11 @@ def get_seed_selector(selector_name: str) -> nd.seeding.BaseSeedSelector:
 
 def load_networks(networks: list[str]) -> list[Network]:
     nets = []
-    for net_name in networks:
-        print(f"Loading {net_name} network")
-        nets.append(Network(net_name, load_network(net_name=net_name, as_tensor=False)))
+    for net_regex in networks:
+        for (net_type, net_name), net_graph in load_network(net_regex=net_regex).items():
+            print(f"Loading network {net_type} - {net_name}")
+            nets.append(Network(type=net_type, name=net_name, graph=net_graph))
+    print(f"Loaded: {len(nets)} networks")
     return nets
 
 
@@ -152,11 +164,11 @@ def compute_rankings(
     
     nets_and_ranks = {}  # {(net_name, ss_name): ranking}
     for n_idx, net in enumerate(networks):
-        print(f"Computing ranking for: {net.name} ({n_idx+1}/{len(networks)})")
+        print(f"Computing ranking for: {net.rich_name} ({n_idx+1}/{len(networks)})")
 
         for s_idx, ssm in enumerate(seed_selectors):
             print(f"Using method: {ssm.name} ({s_idx+1}/{len(seed_selectors)})")   
-            ss_ranking_name = Path(f"ss-{ssm.name}--net-{net.name}--ver-{version}.json")
+            ss_ranking_name = Path(f"ss-{ssm.name}--net-{net.rich_name}--ver-{version}.json")
 
             # obtain ranking for given ssm and net
             if ranking_path:
@@ -168,7 +180,7 @@ def compute_rankings(
             else:
                 ranking = ssm.selector(net.graph, actorwise=True)
                 print("\tranking computed")
-            nets_and_ranks[(net.name, ssm.name)] = ranking
+            nets_and_ranks[(net.rich_name, ssm.name)] = ranking
 
             # save computed ranking
             with open(out_dir / ss_ranking_name, "w") as f:
