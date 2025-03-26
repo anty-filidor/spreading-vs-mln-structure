@@ -53,12 +53,15 @@ if __name__ == "__main__":
         layers_par.to_csv(layers_par_path, index=False)
 
         # test if they can be used
+        n = ref_net.get_actors_num()
+        edges_cor=MLNConfig.get_edges_cor(str(edges_cor_path))
+        layer_params=MLNConfig.get_layer_params(n, str(layers_par_path))
         with tempfile.TemporaryDirectory() as temp_dir:
             mln_config = MLNConfig(
                 seed=RNG_SEED,
-                n=ref_net.get_actors_num(),
-                edges_cor=str(edges_cor_path),
-                layer_params=str(layers_par_path),
+                n=n,
+                edges_cor=edges_cor,
+                layer_params=layer_params,
                 d_max_iter=1000,
                 c_max_iter=1000,
                 t=100,
