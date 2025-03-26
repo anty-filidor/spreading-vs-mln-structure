@@ -150,7 +150,6 @@ class MLNABCDGraphGenerator:
             degrees = jl.MLNABCDGraphGenerator.generate_degrees(config, active_nodes, False)
 
             # Sizes of communities
-            # print(config)
             com_sizes, coms = jl.MLNABCDGraphGenerator.generate_communities(config, active_nodes)
 
             # Generate ABCD graphs
