@@ -5,3 +5,6 @@
 .idea
 .vscode
 examples
+data/nets_generated
+data/raw_results
+templ_*.yaml
