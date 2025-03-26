@@ -175,7 +175,6 @@ def get_layer_params(net: nd.MultilayerNetwork, seed: int | None = None) -> pd.D
         for l_name in net.layers
     }
     params_df = pd.DataFrame(params_dict).T.sort_index()
-    params_df["_q"] = params_df["q"] * nb_actors
     return params_df.round(3).replace(0.0, 0.001)
 
 
