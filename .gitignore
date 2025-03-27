@@ -5,5 +5,4 @@
 .idea
 .vscode
 examples
-data/raw_results
 templ_*.yaml
