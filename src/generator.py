@@ -14,7 +14,7 @@ def run_experiments(config: dict[str, Any]) -> None:
 
     _mln_config = config["mln_config"]
     _mln_config["seed"] = config["run"]["rng_seed"]
-    mln_config = MLNConfig(**_mln_config)
+    mln_config = MLNConfig.from_yaml(_mln_config)
 
     repetitions = config["generator"]["repetitions"]
     out_dir = create_out_dir(config["generator"]["out_dir"])

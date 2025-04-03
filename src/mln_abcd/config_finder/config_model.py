@@ -92,7 +92,11 @@ def get_gamma_delta_Delta(net: nx.Graph) -> dict[str, float]:
     degrees = [d for _, d in net.degree()]
     max_degree = max(degrees)
     min_degree = min(degrees)
-    return {"gamma": _fit_exponent_powerlaw(degrees), "delta": min_degree, "Delta": max_degree}
+    return {
+        "gamma": _fit_exponent_powerlaw(degrees),
+        "delta": min_degree / len(net.nodes),
+        "Delta": max_degree / len(net.nodes),
+    }
 
 
 def _partitions_noise(net: nx.Graph, partition_a: set[Any], partition_b: set[Any]) -> float:
@@ -131,8 +135,8 @@ def get_beta_s_S_xi(net: nx.Graph) -> dict[str, float]:
     partitions_sizes = [len(part) for part in partitions]
     return {
         "beta": _fit_exponent_powerlaw(partitions_sizes),
-        "s": min(partitions_sizes),
-        "S": max(partitions_sizes),
+        "s": min(partitions_sizes) / len(net.nodes),
+        "S": max(partitions_sizes) / len(net.nodes),
         "xi": _avg_partitions_noise(net, partitions)
     }
 

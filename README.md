@@ -44,6 +44,19 @@ the shell:
 dvc pull
 ```
 
+Series of experiments:
+- 0: artifitial networks generated on obtained configuration model for timik1q2009
+- 1: 75% of actors from series 0
+- 2: 50% of actors from series 0
+- 3: 25% of actors from series 0
+- 4: 1% of actors from series 0
+- 5: xi in all layers equals to 0.01 (the original value was 0.001)
+- 6: xi in all layers equals to 0.05
+- 7: xi in all layers equals to 0.10
+- 8: xi in all layers equals to 0.50
+- 9: xi in all layers equals to 1.00
+- 10: Delta equals to 1000 nodes per layer
+
 ## Repository Structure
 
 ```bash
