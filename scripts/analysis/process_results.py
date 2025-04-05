@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Sequence
 
 import matplotlib.pyplot as plt
+import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
 from src.aux.results_plotter import ResultsPlotter
@@ -34,16 +35,20 @@ def main(series_list: list[int]) -> None:
         csv_files.extend(list(series_csvs))
     results = ResultsSlicer(csv_files)
 
+    # create out dir
     workdir = root_path /f"data/results_processed/{'_'.join([str(s) for s in series_list])}"
     workdir.mkdir(exist_ok=True, parents=True)
 
-    pdf = PdfPages(workdir.joinpath(f"expositions.pdf"))
-
+    # analyse results
+    out_pdf = PdfPages(workdir.joinpath(f"expositions.pdf"))
+    out_csv = []
     for (protocol, mi_value, seed_budget, ss_method) in results.get_combinations():
         case_name = f"δ={protocol}, μ={mi_value}, s={seed_budget}, φ={ss_method}"
         print(case_name)
-        baseline = None
-        experiments = {}
+
+        # for each case obtain partial raw results
+        record_baseline = None
+        records_experiments = {}
         for net_type in results.get_net_types():
             results_slice = results.get_slice(
                 protocol=protocol,
@@ -56,32 +61,44 @@ def main(series_list: list[int]) -> None:
                 print(f"no results found for {net_type}")
                 continue
 
+            # compute mean expositions for the visualisation
             if "series_0" in net_type:
-                baseline = results_slice
+                record_baseline = results.mean_expositions_rec(results_slice)
             else:
-                experiments[net_type] = results_slice
+                records_experiments[net_type] = results.mean_expositions_rec(results_slice)
         
-        if baseline is None:
-            continue
+            # update table with average metrics
+            out_csv.append(
+                {
+                    "protocol": protocol,
+                    "mi_value": mi_value,
+                    "seed_budget": seed_budget,
+                    "ss_method": ss_method,
+                    "net_type": net_type,
+                    "gain_avg": results_slice["gain"].mean(),
+                    "gain_std": results_slice["gain"].std(),
+                    "auc_avg": results_slice["auc"].mean(),
+                    "auc_std": results_slice["auc"].std(),
+                }
+            )
 
+        # plot spreading dynamics        
+        if record_baseline is None:
+            continue
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(4, 5))
         ResultsPlotter().plot_single_comparison_dynamics(
-            record_baseline=results.mean_expositions_rec(baseline),
-            records_experiments={nt: results.mean_expositions_rec(re) for nt, re in experiments.items()},
+            record_baseline=record_baseline,
+            records_experiments=records_experiments,
             title=case_name,
             ax=ax,
         )
         fig.tight_layout()
-        fig.savefig(pdf, format="pdf")
+        fig.savefig(out_pdf, format="pdf")
         plt.close(fig)
 
-    pdf.close()
-
-    # unique from raw_csv
-    # for each series
-    # - curve
-    # - iou
-    # - gain
+    # save results
+    out_pdf.close()
+    pd.DataFrame(out_csv).to_csv(workdir / "metrics.csv")
 
 
 if __name__ == "__main__":
