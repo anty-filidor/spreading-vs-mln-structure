@@ -10,12 +10,18 @@ import pandas as pd
 
 class ResultsSlicer:
 
-    def __init__(self, raw_results_path: str, with_repetition: bool = False) -> None:
-        self.raw_df = self.read_raw_df(raw_results_path, with_repetition)
+    def __init__(
+        self,
+        results_paths: list[str],
+        baseline_type: str,
+        with_repetition: bool = False
+    ) -> None:
+        self.raw_df = self.read_raw_df(results_paths, with_repetition)
         self.protocols = self.raw_df["protocol"].unique().tolist()
         self.mi_values = self.raw_df["mi_value"].unique().tolist()
         self.seed_budgets = self.raw_df["seed_budget"].unique().tolist()
         self.ss_methods = self.raw_df["ss_method"].unique().tolist()
+        self.baseline_type = baseline_type
 
     @staticmethod
     def _area_under_curve(row: pd.Series) -> float:
@@ -28,19 +34,29 @@ class ResultsSlicer:
         cdf_scaled = (cdf - start_value) / (max_vaue - start_value)
         cdf_steps = np.linspace(0, 1, len(cdf_scaled))
         return float(np.trapezoid(cdf_scaled, cdf_steps))
-    
+
+    @staticmethod
+    def _split_str(row: pd.Series, sep: str, idx: int) -> str:
+        """Split field `network` from the series and obtain its nth element."""
+        row_splitted = row["network"].split(sep)
+        if row_splitted[0] == row["network"]:
+            return row["network"]
+        elif idx >= len(row_splitted):
+            raise ValueError
+        return row_splitted[idx]
+
     def read_raw_df(self, raw_result_paths: list[str], with_repetition: bool) -> pd.DataFrame:
         dfs = []
         for csv_path in raw_result_paths:
             csv_df = pd.read_csv(csv_path)
-            csv_df["net_type"] = csv_df["network"].map(lambda x: x.split("-")[0])
-            csv_df["net_name"] = csv_df["network"].map(lambda x: x.split("-")[1])
             csv_df["expositions_rec"] = csv_df["expositions_rec"].map(
                 lambda x: [int(xx) for xx in x.split(";")]
             )
+            csv_df["net_type"] = csv_df.apply(self._split_str, sep="-", idx=0, axis=1)
+            csv_df["net_name"] = csv_df.apply(self._split_str, sep="-", idx=1, axis=1)
+            csv_df["auc"] = csv_df.apply(self._area_under_curve, axis=1)
             if with_repetition:
                 csv_df["repetition"] = Path(csv_path).stem.split("_")[-1]
-            csv_df["auc"] = csv_df.apply(self._area_under_curve, axis=1)
             dfs.append(csv_df)
         return pd.concat(dfs, axis=0, ignore_index=True)
 

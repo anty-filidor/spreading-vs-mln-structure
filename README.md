@@ -46,7 +46,7 @@ dvc pull
 
 Series of experiments:
 - 0a: timik1q2009
-- 0b: artifitial networks generated on obtained configuration model for timik1q2009
+- 0: artifitial networks generated on obtained configuration model for timik1q2009
 - 1: 75% of actors from series 0
 - 2: 50% of actors from series 0
 - 3: 25% of actors from series 0

@@ -21,25 +21,37 @@ def parse_args(*args: Sequence[str]) -> argparse.Namespace:
         "series",
         help="IDs of series to process results from",
         nargs="?",
-        type=list[int],
-        default=[0, 1, 2, 3, 4],
+        type=list[str],
+        # default=["0", "0a"],
+        default=["0", "1", "2", "3", "4"],
+        # default=["0", "5", "6", "7", "8", "9"],
+        # default=["0", "10"],
+    )
+    parser.add_argument(
+        "baseline_type",
+        help="Type of the network to be useda as a baseline run",
+        nargs="?",
+        type=str,
+        # default="timik1q2009",
+        default="data.nets_generated.series_0",
+
     )
     return parser.parse_args(*args)
 
 
-def main(series_list: list[int]) -> None:
+def main(series_list: list[str], baseline_type: str) -> None:
     print("loading data")
     csv_files = []
     for series in series_list:
         series_csvs = (root_path / f"data/results_raw/series_{series}").glob("**/*.csv")
         csv_files.extend(list(series_csvs))
-    results = ResultsSlicer(csv_files)
+    results = ResultsSlicer(results_paths=csv_files, baseline_type=baseline_type)
 
     # create out dir
-    workdir = root_path /f"data/results_processed/{'_'.join([str(s) for s in series_list])}"
+    workdir = root_path / f"data/results_processed/{'_'.join([s for s in series_list])}"
     workdir.mkdir(exist_ok=True, parents=True)
 
-    # analyse results
+    # analyse the results
     out_pdf = PdfPages(workdir.joinpath(f"expositions.pdf"))
     out_csv = []
     for (protocol, mi_value, seed_budget, ss_method) in results.get_combinations():
@@ -47,7 +59,6 @@ def main(series_list: list[int]) -> None:
         print(case_name)
 
         # for each case obtain partial raw results
-        record_baseline = None
         records_experiments = {}
         for net_type in results.get_net_types():
             results_slice = results.get_slice(
@@ -62,10 +73,7 @@ def main(series_list: list[int]) -> None:
                 continue
 
             # compute mean expositions for the visualisation
-            if "series_0" in net_type:
-                record_baseline = results.mean_expositions_rec(results_slice)
-            else:
-                records_experiments[net_type] = results.mean_expositions_rec(results_slice)
+            records_experiments[net_type] = results.mean_expositions_rec(results_slice)
         
             # update table with average metrics
             out_csv.append(
@@ -83,12 +91,12 @@ def main(series_list: list[int]) -> None:
             )
 
         # plot spreading dynamics        
-        if record_baseline is None:
+        if len(records_experiments) == 0:
             continue
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(4, 5))
         ResultsPlotter().plot_single_comparison_dynamics(
-            record_baseline=record_baseline,
             records_experiments=records_experiments,
+            baseline_key=results.baseline_type,
             title=case_name,
             ax=ax,
         )
@@ -104,4 +112,4 @@ def main(series_list: list[int]) -> None:
 if __name__ == "__main__":
     args = parse_args()
     print(args)
-    main(series_list=args.series)
+    main(series_list=args.series, baseline_type=args.baseline_type)

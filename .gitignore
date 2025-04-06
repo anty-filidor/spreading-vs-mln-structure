@@ -4,5 +4,6 @@
 *.json
 .idea
 .vscode
+data/results_processed
 examples
 templ_*.yaml

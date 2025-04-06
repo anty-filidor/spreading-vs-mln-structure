@@ -31,21 +31,21 @@ class ResultsPlotter:
 
     def plot_single_comparison_dynamics(
         self,
-        record_baseline: dict[str, float],
         records_experiments: dict[str, dict[str, float]],
+        baseline_key: str,
         title: str,
         ax: matplotlib.axes.Axes,
     ) -> None:
         plt.rc("legend", fontsize=8)
-        x_max = max(
-            [
-                len(record_baseline["avg"]), 
-                *list(len(re["avg"]) for re in records_experiments.values())
-            ]
-        )
-        self.plot_avg_with_std(record_baseline, ax, "baseline", x_max, BASELINE_ACTORS_COLOUR, BASELINE_ACTORS_LINE)
+        x_max = max([len(re["avg"]) for re in records_experiments.values()])
         for re_name, re_curve in records_experiments.items():
-            self.plot_avg_with_std(re_curve, ax, re_name, x_max)
+            if baseline_key == re_name:
+                colour = BASELINE_ACTORS_COLOUR
+                shape = BASELINE_ACTORS_LINE
+            else:
+                colour = None
+                shape = None
+            self.plot_avg_with_std(re_curve, ax, re_name, x_max, colour=colour, shape=shape)
         ax.set_xlabel("Step")
         ax.set_ylabel("Expositions")
         ax.set_xlim(left=0, right=x_max - 1)
