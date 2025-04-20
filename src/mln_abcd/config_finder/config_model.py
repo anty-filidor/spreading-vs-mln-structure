@@ -112,7 +112,7 @@ def _partitions_noise(net: nx.Graph, partition_a: set[Any], partition_b: set[Any
     return common_edges / edges_nb
 
 
-def _avg_partitions_noise(net: nx.Graph, partitions: list[set[Any]]) -> float:
+def _avg_partitions_noise(net: nx.Graph, partitions: list[set[Any]]) -> dict[str, float]:
     """
     The noise is avg fract. of edges between two partitions to number of edges in the subgrah
     incuded by these partitions.
@@ -124,9 +124,13 @@ def _avg_partitions_noise(net: nx.Graph, partitions: list[set[Any]]) -> float:
         partition_b = partitions_dict[partition_b_name]
         ab_noise = _partitions_noise(net, partition_a, partition_b)
         all_noises.append(ab_noise)
+    all_noises = np.array(all_noises)
+    nonzero_noises = all_noises[all_noises > 0]
     with warnings.catch_warnings():
         warnings.simplefilter("error", RuntimeWarning)
-        return np.array(all_noises).mean().item()
+        mean_all_noise = np.array(all_noises).mean().item()
+        mean_nonzero_noise = np.nan if len(nonzero_noises) == 0 else nonzero_noises.mean().item()
+        return {"xi": mean_all_noise, "xi_nonzero": mean_nonzero_noise}
 
 
 def get_beta_s_S_xi(net: nx.Graph) -> dict[str, float]:
@@ -137,7 +141,7 @@ def get_beta_s_S_xi(net: nx.Graph) -> dict[str, float]:
         "beta": _fit_exponent_powerlaw(partitions_sizes),
         "s": min(partitions_sizes) / len(net.nodes),
         "S": max(partitions_sizes) / len(net.nodes),
-        "xi": _avg_partitions_noise(net, partitions)
+        **_avg_partitions_noise(net, partitions),
     }
 
 
