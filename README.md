@@ -51,12 +51,11 @@ Series of experiments:
 - 2: 50% of actors from series 0
 - 3: 25% of actors from series 0
 - 4: 1% of actors from series 0
-- 5: xi in all layers equals to 0.01 (the original value was 0.001)
-- 6: xi in all layers equals to 0.05
-- 7: xi in all layers equals to 0.10
-- 8: xi in all layers equals to 0.50
-- 9: xi in all layers equals to 1.00
-- 10: Delta equals to 1000 nodes per layer
+- 5: xi in all layers equals 1.00
+- 6: xi in all layers equals 200% of the original xi
+- 7: xi in all layers equals 50% of the original xi
+- 8: xi in all layers equals 0.01
+- 9: Delta equals to 1000 nodes per layer
 
 ## Repository Structure
 
