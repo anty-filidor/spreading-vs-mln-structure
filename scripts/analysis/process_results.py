@@ -32,8 +32,8 @@ def parse_args(*args: Sequence[str]) -> argparse.Namespace:
         help="Type of the network to be useda as a baseline run",
         nargs="?",
         type=str,
-        # default="timik1q2009",
-        default="data.nets_generated.series_0",
+        default="timik1q2009",
+        # default="data.nets_generated.series_0",
 
     )
     return parser.parse_args(*args)
@@ -69,7 +69,7 @@ def main(series_list: list[str], baseline_type: str) -> None:
                 net_type=net_type,
             )
             if len(results_slice) == 0:
-                print(f"no results found for {net_type}")
+                print(f"\tno results found for {net_type}")
                 continue
 
             # compute mean expositions for the visualisation
