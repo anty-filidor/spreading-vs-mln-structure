@@ -59,6 +59,7 @@ Series of experiments:
 - 7: xi in all layers equals 50% of the original xi
 - 8: xi in all layers equals 0.01
 - 9: Delta equals to 1000 nodes per layer
+- 10: TODO experiment where layers play a role
 
 ## Repository Structure
 
@@ -134,3 +135,10 @@ the following structure. The script names correspond to the names of the generat
 ├── correlations_verbose.py
 └── configuration_model.py
 ...
+
+
+# TODO:
+- find matching spreading parameters for the artificial networks matching tmik1q2009
+    simulations are almost completed (today we should have the results)
+- run again simulaitons on artificial networks using these parameters
+- 
