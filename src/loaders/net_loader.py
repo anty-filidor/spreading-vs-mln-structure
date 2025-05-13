@@ -196,6 +196,7 @@ def read_mlnabcd_networks(convolved_name: str) -> dict[tuple[str, str], nd.Multi
 
 def _prepare_network(net: nd.MultilayerNetwork) -> nd.MultilayerNetwork:
     for _, l_graph in net.layers.items():
+        l_graph.remove_edges_from(nx.selfloop_edges(l_graph))
         isolated_nodes = list(nx.isolates(l_graph))
         l_graph.remove_nodes_from(isolated_nodes)
     if net.is_directed(): raise ValueError("Only undirected networks can be processed right now!")
@@ -203,7 +204,7 @@ def _prepare_network(net: nd.MultilayerNetwork) -> nd.MultilayerNetwork:
 
 
 def prepare_network(load_networks_func: Callable) -> Callable:
-    """Remove isolated nodes from function."""
+    """Remove isolated nodes and nodes with self-edges only from the network."""
     @wraps(load_networks_func)
     def wrapper(*args, **kwargs) -> dict[str, nd.MultilayerNetwork]:
         net_dict = load_networks_func(*args, **kwargs)

@@ -45,7 +45,7 @@ dvc pull
 ```
 
 Series of experiments:
-- 0a: timik1q2009
+- 0a: timik1q2009 without self-edges and isolated nodes
 - 0b: coarse searching for spreading parameters to apply in twins of timik1q2009 resulting in
   similar diffusion
 - 0c: ditto but detailed
