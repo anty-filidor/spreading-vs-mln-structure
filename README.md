@@ -45,21 +45,18 @@ dvc pull
 ```
 
 Series of experiments:
-- 0a: timik1q2009 without self-edges and isolated nodes
-- 0b: coarse searching for spreading parameters to apply in twins of timik1q2009 resulting in
-  similar diffusion
-- 0c: ditto but detailed
-- 0: artifitial networks generated on obtained configuration model for timik1q2009
-- 1: 75% of actors from series 0
-- 2: 50% of actors from series 0
-- 3: 25% of actors from series 0
-- 4: 1% of actors from series 0
-- 5: xi in all layers equals 1.00
-- 6: xi in all layers equals 200% of the original xi
-- 7: xi in all layers equals 50% of the original xi
-- 8: xi in all layers equals 0.01
-- 9: Delta equals to 1000 nodes per layer
-- 10: TODO experiment where layers play a role
+- 0: timik1q2009 without self-edges and isolated nodes
+- 1: a twin of timik1q2009 with some parameters smoothed
+- 2: xi in all layers equals 1.00
+- 3: xi in all layers equals 200% of the original xi
+- 4: xi in all layers equals 50% of the original xi
+- 5: xi in all layers equals 0.01
+<!-- - 5: artifitial networks generated on obtained configuration model for timik1q2009
+- 6: 75% of actors from series 0
+- 7: 50% of actors from series 0
+- 8: 25% of actors from series 0
+- 9: 1% of actors from series 0
+- 10: Delta equals to 1000 nodes per layer -->
 
 ## Repository Structure
 
@@ -135,10 +132,3 @@ the following structure. The script names correspond to the names of the generat
 ├── correlations_verbose.py
 └── configuration_model.py
 ...
-
-
-# TODO:
-- find matching spreading parameters for the artificial networks matching tmik1q2009
-    simulations are almost completed (today we should have the results)
-- run again simulaitons on artificial networks using these parameters
-- 
