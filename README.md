@@ -90,7 +90,7 @@ Julia wrapper for Python. See `scripts/configs/example_generate.yaml` for refere
 ## Diffusion Simulator
 
 The second key functionality of this repository is the simulation of diffusion under the Multilayer
-Linear Threshold Model. See `example_config.yaml` for reference. For each repetition of the
+Independent Cascade Model. See `example_config.yaml` for reference. For each repetition of the
 Cartesian product computed for the provided parameters, a `csv` file will be generated with the
 following columns:
 
@@ -98,21 +98,22 @@ following columns:
 {
     seed_ids: str           # IDs of actors that were seeds, aggregated into a string (separated by ;)
     gain: float             # Gain* obtained using this seed set
+    area: float             # Area* under normalised activations curve obtained using this seed set
     simulation_length: int  # Number of simulation steps
     seed_nb: int            # Number of actors that were seeds
     exposed_nb: int         # Number of active actors at the end of the simulation
     unexposed_nb: int       # Number of actors that remained inactive
     expositions_rec: str    # Record of new activations per epoch, aggregated into a string (sep. ;)
     network: str            # Network's name
-    protocol: str           # Protocol's name
-    seed_budget: float      # Value of the maximum seed budget
-    mi_value: float         # Value of the threshold
     ss_method: str          # Seed selection method's name
+    seed_budget: float      # Value of the maximum seed budget
+    protocol: str           # Protocol's name
+    probab: float           # Value of the activation probability
 }
 ```
 
-`*` Gain represents the percentage of the non-initially seeded population that became exposed during
-the simulation: `(exposed_nb - seed_nb) / (total_actor_nb - seed_nb) * 100%`
+`*` Gain represents the overal coverage by the spreading process w.r.t. seed set wchile Area dynamics
+of the diffusion (see `src/simulator/simulation_step.py`) for reference.
 
 The simulator will also save the provided configuration file, rankings of actors used in
 computations, and detailed logs of evaluated cases whose index modulo `full_output_frequency`equals 0.
