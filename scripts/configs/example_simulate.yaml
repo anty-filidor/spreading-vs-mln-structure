@@ -25,10 +25,10 @@ parameter_space:  # parameters in a form of lists. the simulator will eval. thei
     # "p_rnk_m",
     "random",
     # "v_rnk",
-    "v_rnk_m",
+    # "v_rnk_m",
   ]
   networks: [
-    # mlnabcd^series_1/edges_2.dat,
+    mlnabcd^series_1/edges_2.dat,
     # mlnabcd^series_1/*,  # or with a wildcard
     # "bigreal^arxiv_netscience_coauthorship",
     # "bigreal^arxiv_netscience_coauthorship_math.oc",
@@ -56,7 +56,7 @@ parameter_space:  # parameters in a form of lists. the simulator will eval. thei
 
 simulator:
   max_epochs_num: -1  # this is a wildcard for unlimited allowed epochs in LTM spread instance
-  repetitions: 2  # number of repetitions of each simulated case
+  repetitions: 3  # number of repetitions of each simulated case
 
 io:
   ranking_path: null  # path to read rankings of actors from (null to compute them before exper.)

@@ -234,15 +234,15 @@ class TorchMICSimulator:
             if step_result.get(1, 0) > peak_infected:
                 peak_infected = step_result.get(1, 0)
                 peak_iteration = j
+
+            expositions_rec.append(step_result.get(1, 0))  # it's necessary to have this line here
             
             if self.is_steady_state(S_i, S_j) or j == self.n_steps - 1:
                 # if self.debug: print(f"Simulation stopped after {j}th step")
-                simulation_length = j
+                simulation_length = j + 1
                 exposed = step_result.get(-1, 0) + step_result.get(1, 0)
                 not_exposed = step_result.get(0, 0)
                 break
-
-            expositions_rec.append(step_result.get(1, 0))
 
             S_i = S_j
 

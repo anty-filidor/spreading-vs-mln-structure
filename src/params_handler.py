@@ -2,7 +2,7 @@
 
 import itertools
 import json
-import math
+import random
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -41,6 +41,16 @@ class Network:
 class SeedSelector:
     name: str
     selector: nd.seeding.BaseSeedSelector
+
+
+class MyRandomSeedSelector(nd.seeding.RandomSeedSelector):  # TODO: move to nd
+    """Base version just stopped being capable to make deterministic; here's a workaround. """
+
+    def actorwise(self, net: nd.MultilayerNetwork) -> list[nd.MLNetworkActor]:
+        actors = net.get_actors(shuffle=False)
+        sorted_actors = sorted(actors, key=lambda x: x.actor_id)
+        random.shuffle(sorted_actors)
+        return sorted_actors
 
 
 def get_parameter_space(
@@ -95,7 +105,7 @@ def get_seed_selector(selector_name: str) -> nd.seeding.BaseSeedSelector:
     elif selector_name == "p_rnk_m":
         return nd.seeding.PageRankMLNSeedSelector()
     elif selector_name == "random":
-        return nd.seeding.RandomSeedSelector()
+        return MyRandomSeedSelector()
     elif selector_name == "v_rnk":
         return nd.seeding.VoteRankSeedSelector()
     elif selector_name == "v_rnk_m":

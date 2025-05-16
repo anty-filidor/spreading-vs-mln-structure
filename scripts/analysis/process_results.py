@@ -1,5 +1,7 @@
 """Statistical analysis of the results."""
 
+# TODO: needs to be updated - network loader has been changed
+
 import argparse
 from pathlib import Path
 from typing import Sequence

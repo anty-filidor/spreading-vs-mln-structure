@@ -1,5 +1,7 @@
 """Plot basic properties of the networks."""
 
+# TODO: needs to be updated - network loader has been changed
+
 from dataclasses import dataclass, asdict
 
 import networkx as nx

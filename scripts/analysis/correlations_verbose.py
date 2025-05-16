@@ -1,5 +1,7 @@
 """Plot verbose correlations between layers of the networks."""
 
+# TODO: needs to be updated - network loader has been changed
+
 from pathlib import Path
 from typing import Optional, Union
 
