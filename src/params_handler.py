@@ -34,7 +34,7 @@ class Network:
         _name = self.n_name.replace("/", ".")
         if _type == _name:
             return _type
-        return f"{_type}-{_name}"
+        return f"{_type}{SEPARATOR}{_name}"
 
 
 @dataclass(frozen=True)
@@ -103,7 +103,7 @@ def get_seed_selector(selector_name: str) -> nd.seeding.BaseSeedSelector:
     raise AttributeError(f"{selector_name} is not a valid name for seed selector!")
 
 
-def load_networks(networks: list[str], device: str) -> list[Network]:  # TODO
+def load_networks(networks: list[str], device: str) -> list[Network]:
     nets = []
     for net_regex in networks:
         net_type, net_name = net_regex.split(SEPARATOR)
@@ -148,13 +148,17 @@ def compute_rankings(
             ss_ranking_name = Path(f"ss-{ssm.name}--net-{net.rich_name}--ver-{version}.json")
 
             # obtain ranking for given ssm and net
+            ranking = []
             if ranking_path:
                 ranking_file = Path(ranking_path) / ss_ranking_name
-                with open(ranking_file, "r") as f:
-                    ranking_dict = json.load(f)
-                ranking = [nd.MLNetworkActor.from_dict(rd) for rd in ranking_dict]
-                print("\tranking loaded")
-            else:
+                try:
+                    with open(ranking_file, "r") as f:
+                        ranking_dict = json.load(f)
+                    ranking = [nd.MLNetworkActor.from_dict(rd) for rd in ranking_dict]
+                    print("\tranking loaded")
+                except:
+                    print("\tunable to load ranking, falling back to computations")
+            if len(ranking) == 0:
                 ranking = ssm.selector(net.n_graph_nx, actorwise=True)
                 print("\tranking computed")
             assert len(ranking) == net.n_graph_nx.get_actors_num()

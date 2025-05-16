@@ -208,7 +208,7 @@ class TorchMICSimulator:
         _S[_S == -1 * float("inf")] = 0.
         return _S.sum(dim=0).clamp(-1, 1)
 
-    def count_states(self, S: torch.Tensor) -> dict[int: int]:
+    def count_states(self, S: torch.Tensor) -> dict[int, int]:
         """Count actors not_exposed (0), exposed (-1) and active (1)."""
         states_values, states_counts = self.S_nodes_to_actors(S).unique(return_counts=True)
         return {int(val.item()): int(cnt.item()) for val, cnt in zip(states_values, states_counts)}
@@ -235,7 +235,7 @@ class TorchMICSimulator:
                 peak_infected = step_result.get(1, 0)
                 peak_iteration = j
             
-            if self.is_steady_state(S_i, S_j):
+            if self.is_steady_state(S_i, S_j) or j == self.n_steps - 1:
                 # if self.debug: print(f"Simulation stopped after {j}th step")
                 simulation_length = j
                 exposed = step_result.get(-1, 0) + step_result.get(1, 0)

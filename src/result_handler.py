@@ -7,6 +7,10 @@ from pathlib import Path
 import pandas as pd
 
 
+DET_LOGS_DIR = "detailed_logs"
+RANKINGS_DIR = "rankings"
+
+
 @dataclass(frozen=True)
 class SimulationPartialResult:
     seed_ids: str  # IDs of actors that were seeds aggr. into string (sep. by ;)
@@ -21,7 +25,8 @@ class SimulationPartialResult:
 
 @dataclass(frozen=True)
 class SimulationFullResult(SimulationPartialResult):
-    network: str  # network's name
+    network_type: str  # network's type
+    network_name: str  # network's name
     ss_method: str  # seed selection method's name
     seed_budget: float  # a value of the maximal seed budget
     protocol: str  # protocols's (aggragation function) name
@@ -31,7 +36,8 @@ class SimulationFullResult(SimulationPartialResult):
     def enhance_SPR(
         cls,
         SPR: SimulationPartialResult,
-        network: str,
+        network_type: str,
+        network_name: str,
         ss_method: str,
         seed_budget: float,
         protocol: str,
@@ -46,7 +52,8 @@ class SimulationFullResult(SimulationPartialResult):
             exposed_nb=SPR.exposed_nb,
             unexposed_nb=SPR.unexposed_nb,
             expositions_rec=SPR.expositions_rec,
-            network=network,
+            network_type=network_type,
+            network_name=network_name,
             ss_method=ss_method,
             seed_budget=seed_budget,
             protocol=protocol,

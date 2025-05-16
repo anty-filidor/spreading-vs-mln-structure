@@ -9,10 +9,6 @@ from src import params_handler, result_handler, utils
 from src.simulator import ranking_runner
 
 
-DET_LOGS_DIR = "detailed_logs"
-RANKINGS_DIR = "rankings"
-
-
 def run_experiments(config: dict[str, Any]) -> None:
 
     # load networks, initialise ssms and evaluated parameter space
@@ -36,9 +32,7 @@ def run_experiments(config: dict[str, Any]) -> None:
 
     # prepare output directories and determine how to store results
     out_dir = params_handler.create_out_dir(config["io"]["out_dir"])
-    det_dir = out_dir / DET_LOGS_DIR
-    det_dir.mkdir(exist_ok=True, parents=True)
-    rnk_dir = out_dir / RANKINGS_DIR
+    rnk_dir = out_dir / result_handler.RANKINGS_DIR
     rnk_dir.mkdir(exist_ok=True, parents=True)
     compress_to_zip = config["io"]["compress_to_zip"]
 
@@ -82,13 +76,12 @@ def run_experiments(config: dict[str, Any]) -> None:
                         case_idx=idx,
                         cases_nb=len(p_bar),
                         protocol=proto,
-                        mi_value=p,
+                        probab=p,
                         budget=budget[1],
                         net_name=net.rich_name,
                         ss_name=ss_method,
                     )
                 )
-                ic_name = f"{utils.get_case_name_base(proto, p, budget[1], ss_method, net.rich_name)}--ver-{ver}"
                 investigated_case_results = ranking_runner.handle_step(
                     proto=proto, 
                     p=p,
@@ -100,7 +93,8 @@ def run_experiments(config: dict[str, Any]) -> None:
                 )
                 rep_results.extend(investigated_case_results)
             except BaseException as e:
-                print(f"\nExperiment failed for case: {ic_name}")
+                base_name = utils.get_case_name_base(proto, p, budget[1], ss_method, net.rich_name)
+                print(f"\nExperiment failed for case: {base_name}--ver-{ver}")
                 raise e
         
         # aggregate results for given repetition number and save them to a csv file
@@ -108,7 +102,7 @@ def run_experiments(config: dict[str, Any]) -> None:
 
     # compress global logs and config
     if compress_to_zip:
-        result_handler.zip_detailed_logs([det_dir, rnk_dir], rm_logged_dirs=True)
+        result_handler.zip_detailed_logs([rnk_dir], rm_logged_dirs=True)
 
     finish_time = utils.get_current_time()
     print(f"\nExperiments finished at {finish_time}")

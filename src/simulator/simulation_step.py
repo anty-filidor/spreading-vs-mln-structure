@@ -22,7 +22,7 @@ def compute_area(expositions_rec: list[int], seeds_nb: int, actors_nb: int) -> f
     """Compute normalised AuC from expositions record while seed set impact is discarded."""
     cumsum = np.array(list(accumulate(expositions_rec)))  # TODO: move to nd
     if len(cumsum) < 2:
-        warnings.warn("CDF must co(ntain at least two values.")
+        warnings.warn("cumulated distribution must contain at least two samples.")
         return None
     cumsum_scaled = (cumsum - seeds_nb) / (actors_nb - seeds_nb)
     cumsum_steps = np.linspace(0, 1, len(cumsum_scaled))
@@ -78,7 +78,7 @@ def experiment_step(
     )
 
     return SimulationPartialResult(
-        seed_ids=";".join([str(s) for s in sorted(seed_set)]),
+        seed_ids=";".join(sorted([str(s) for s in seed_set])),
         gain=gain,
         area=area,
         simulation_length=logs["simulation_length"],

@@ -27,7 +27,8 @@ def handle_step(
     )
     step_sfr = SimulationFullResult.enhance_SPR(
         SPR=step_spr,
-        network=net.rich_name,
+        network_type=net.n_type,
+        network_name=net.n_name,
         protocol=proto,
         probab=p,
         seed_budget=budget[1],
