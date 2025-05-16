@@ -1,8 +1,14 @@
 """A script with strings used across module in form of variables."""
 
+from functools import wraps
 from pathlib import Path
+from typing import Callable
+
+import network_diffusion as nd
+
 
 MLN_RAW_DATA_PATH = Path(__file__).parent.parent.parent / "data/networks"
+MLN_ABCD_DATA_PATH = Path(__file__).parent.parent.parent / "data/nets_generated"
 
 # network names
 ARXIV_NETSCIENCE_COAUTHORSHIP = "arxiv_netscience_coauthorship"
@@ -30,4 +36,17 @@ TOY_NETWORK = "toy_network"
 
 MLNABCD_PREFIX = "mlnabcd"
 
-WILDCARD = "^"
+SEPARATOR = "^"
+WILDCARD_ALL = "*"
+
+
+def return_some_layers(get_network_func: Callable) -> Callable:
+    """Decorator for network loader to filter out a multilayer network to return only one layer."""
+    @wraps(get_network_func)
+    def wrapper(layer_slice = None):
+        net = get_network_func()
+        if not layer_slice:
+            return net
+        l_graphs = [net.layers[layer] for layer in layer_slice]
+        return nd.MultilayerNetwork.from_nx_layers(l_graphs, layer_slice)
+    return wrapper

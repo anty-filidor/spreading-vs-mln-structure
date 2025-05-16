@@ -12,7 +12,7 @@ from typing import Callable
 import network_diffusion as nd
 
 from src.loaders.net_loader import load_network
-from src.loaders.constants import WILDCARD
+from src.loaders.constants import SEPARATOR
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -24,14 +24,15 @@ class JSONEncoder(json.JSONEncoder):
 
 @dataclass(frozen=True)
 class Network:
-    type: str
-    name: str
-    graph: nd.MultilayerNetwork
+    n_type: str
+    n_name: str
+    n_graph_pt: nd.MultilayerNetworkTorch
+    n_graph_nx: nd.MultilayerNetwork
 
     @property
     def rich_name(self) -> str:
-        _type = self.type.replace("/", ".")
-        _name = self.name.replace("/", ".")
+        _type = self.n_type.replace("/", ".")
+        _name = self.n_name.replace("/", ".")
         if _type == _name:
             return _type
         return f"{_type}-{_name}"
@@ -133,13 +134,21 @@ def get_seed_selector(selector_name: str) -> nd.seeding.BaseSeedSelector:
     raise AttributeError(f"{selector_name} is not a valid name for seed selector!")
 
 
-def load_networks(networks: list[str]) -> list[Network]:
+def load_networks(networks: list[str], device: str) -> list[Network]:  # TODO
     nets = []
     for net_regex in networks:
-        for (net_type, net_name), net_graph in load_network(net_regex=net_regex).items():
-            print(f"Loading network {net_type} - {net_name}")
-            nets.append(Network(type=net_type, name=net_name, graph=net_graph))
-    print(f"Loaded: {len(nets)} networks")
+        net_type, net_name = net_regex.split(SEPARATOR)
+        print(f"Loading network(s): {net_type} - {net_name}")
+        for (net_type, net_name), net_graph in load_network(net_type=net_type, net_name=net_name).items():
+            nets.append(
+                Network(
+                    n_type=net_type,
+                    n_name=net_name,
+                    n_graph_nx=net_graph,
+                    n_graph_pt=nd.MultilayerNetworkTorch.from_mln(net_graph, device)
+                )
+            )
+    print(f"Loaded {len(nets)} networks")
     return nets
 
 

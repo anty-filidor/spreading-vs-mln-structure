@@ -69,8 +69,8 @@ def analyse_network(network: nd.MultilayerNetwork) -> NetworkMetrics:
 def analyse_networks(networks: list[Network]) -> NetworkMetrics:
     stats: list[NetworkMetrics] = []
     for network in networks:
-        print(f"\tanalysing network {network.name}")
-        stats.append(analyse_network(network.graph))
+        print(f"\tanalysing network {network.n_name}")
+        stats.append(analyse_network(network.n_graph_nx))
     return NetworkMetrics(
         actors=np.mean([s.actors for s in stats]),
         layers=np.mean([s.layers for s in stats]),
@@ -86,7 +86,7 @@ def analyse_networks(networks: list[Network]) -> NetworkMetrics:
 
 
 series_stats = {
-    BASE_NETWORK: analyse_network(load_networks([BASE_NETWORK])[0].graph)
+    BASE_NETWORK: analyse_network(load_networks([BASE_NETWORK])[0].n_graph_nx)
 }
 for s_name, s_nick in TWIN_NETWORKS.items():
     print(f"\n\nProcessing {s_name}")

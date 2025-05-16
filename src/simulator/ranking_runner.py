@@ -25,7 +25,7 @@ def handle_step(
         protocol=proto,
         budget=budget,
         mi_value=mi,
-        net=net.graph,
+        net=net.n_graph_nx,
         ranking=ranking,
         max_epochs_num=max_epochs_num,
         patience=patience,

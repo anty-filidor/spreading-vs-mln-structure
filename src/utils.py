@@ -4,8 +4,8 @@ import warnings
 from math import log10
 
 import git
-import torch
 import numpy as np
+from network_diffusion.utils import fix_random_seed
 
 
 warnings.filterwarnings(action="ignore", category=FutureWarning)
@@ -52,7 +52,4 @@ def get_recent_git_sha() -> str:
 
 
 def set_rng_seed(seed: int) -> None:
-    """Fix seed of the random numbers generator for reproducable experiments."""
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
+    fix_random_seed(seed=seed) # TODO: use it directly from nd once new version is released
