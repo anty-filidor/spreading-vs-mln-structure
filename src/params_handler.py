@@ -5,9 +5,8 @@ import json
 import math
 import tempfile
 from dataclasses import dataclass
-from functools import wraps
 from pathlib import Path
-from typing import Callable
+from typing import Any
 
 import network_diffusion as nd
 
@@ -15,8 +14,8 @@ from src.loaders.net_loader import load_network
 from src.loaders.constants import SEPARATOR
 
 
-class JSONEncoder(json.JSONEncoder):  # TODO -> move to nd
-    def default(self, obj):
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj) -> dict[str, Any]:
         if isinstance(obj, nd.MLNetworkActor):
             return obj.__dict__
         return super().default(obj)
@@ -46,30 +45,24 @@ class SeedSelector:
 
 def get_parameter_space(
     protocols: list[str],
+    probabs: list[float],
     seed_budgets: list[float],
-    mi_values: list[float],
-    networks: list[tuple[str, str]],
     ss_methods: list[str],
+    networks: list[tuple[str, str]],
 ) -> list[tuple[str, tuple[float, float], float, tuple[str, str], str]]:
     seed_budgets_full = [(100 - i, i) for i in seed_budgets]
-    p_space = itertools.product(protocols, seed_budgets_full, mi_values, networks, ss_methods)
+    p_space = itertools.product(protocols, seed_budgets_full, probabs, networks, ss_methods)
     return list(p_space)
-
-
-def get_logging_frequency(full_output_frequency: int) -> float | int:
-    if full_output_frequency == -1:
-        return math.pi
-    return full_output_frequency
 
 
 def create_out_dir(out_dir: str) -> Path:
     try:
-        out_dir = Path(out_dir)
-        out_dir.mkdir(exist_ok=True, parents=True)
+        out_dir_path = Path(out_dir)
+        out_dir_path.mkdir(exist_ok=True, parents=True)
     except FileExistsError:
         print("Redirecting output to hell...")
-        out_dir = Path(tempfile.mkdtemp())
-    return out_dir
+        out_dir_path = Path(tempfile.mkdtemp())
+    return out_dir_path
 
 
 def get_seed_selector(selector_name: str) -> nd.seeding.BaseSeedSelector:
@@ -116,6 +109,7 @@ def load_networks(networks: list[str], device: str) -> list[Network]:  # TODO
         net_type, net_name = net_regex.split(SEPARATOR)
         print(f"Loading network(s): {net_type} - {net_name}")
         for (net_type, net_name), net_graph in load_network(net_type=net_type, net_name=net_name).items():
+            print("\tconverting to PyTorch")
             nets.append(
                 Network(
                     n_type=net_type,
@@ -136,15 +130,13 @@ def load_seed_selectors(ss_methods: list[str]) -> list[SeedSelector]:
     return ssms
 
 
-# TODO: this function is not able yet to treat rankings for method: g^random and random as the the
-# same one. We can try to implement such functionality to speed up computations
 def compute_rankings(
     seed_selectors: list[SeedSelector],
     networks: list[Network],
     out_dir: Path,
     version: str,
     ranking_path: Path | None = None,
-) -> dict[tuple[str, str]: list[nd.MLNetworkActor]]:
+) -> dict[tuple[str, str], list[nd.MLNetworkActor]]:
     """For given networks and seed seleciton methods compute or load rankings of actors."""
     
     nets_and_ranks = {}  # {(net_name, ss_name): ranking}
@@ -155,7 +147,7 @@ def compute_rankings(
             print(f"Using method: {ssm.name} ({s_idx+1}/{len(seed_selectors)})")   
             ss_ranking_name = Path(f"ss-{ssm.name}--net-{net.rich_name}--ver-{version}.json")
 
-            # obtain ranking for given ssm and net  # TODO: move to nd
+            # obtain ranking for given ssm and net
             if ranking_path:
                 ranking_file = Path(ranking_path) / ss_ranking_name
                 with open(ranking_file, "r") as f:
@@ -165,6 +157,7 @@ def compute_rankings(
             else:
                 ranking = ssm.selector(net.n_graph_nx, actorwise=True)
                 print("\tranking computed")
+            assert len(ranking) == net.n_graph_nx.get_actors_num()
             nets_and_ranks[(net.rich_name, ssm.name)] = ranking
 
             # save computed ranking

@@ -45,7 +45,7 @@ def prepare_network(load_network_func: Callable) -> Callable:
     @wraps(load_network_func)
     def wrapper(*args, **kwargs) -> dict[tuple[str, str], nd.MultilayerNetwork]:
         net_dict = load_network_func(*args, **kwargs)
-        print("removing self-loops and isolated nodes")
+        print("\tremoving self-loops and isolated nodes")
         return {
             (net_type, net_name): _prepare_network(net_graph) for
             (net_type, net_name), net_graph in net_dict.items()

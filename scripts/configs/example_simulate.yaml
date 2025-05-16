@@ -5,7 +5,7 @@ run:
 
 parameter_space:  # parameters in a form of lists. the simulator will eval. their cartesian product
   protocols: ["AND", "OR"]
-  mi_values: [0.1, 0.15, 0.2]
+  probabs: [0.5, 0.15, 0.2]
   seed_budgets: [5, 10, 15]
   ss_methods: [
     # "btw",
@@ -28,40 +28,38 @@ parameter_space:  # parameters in a form of lists. the simulator will eval. thei
     "v_rnk_m",
   ]
   networks: [
-    mlnabcd^series_1/edges_2.dat,
-    mlnabcd^series_1/*,  # or with a wildcard
-    "bigreal^arxiv_netscience_coauthorship",
-    "bigreal^arxiv_netscience_coauthorship_math.oc",
+    # mlnabcd^series_1/edges_2.dat,
+    # mlnabcd^series_1/*,  # or with a wildcard
+    # "bigreal^arxiv_netscience_coauthorship",
+    # "bigreal^arxiv_netscience_coauthorship_math.oc",
     # "bigreal^cannes",
-    "bigreal^timik1q2009",
+    # "bigreal^timik1q2009",
     "smallreal^aucs",
-    "smallreal^ckm_physicians",
-    "smallreal^eu_transportation",
-    "smallreal^eu_transport_klm",
-    "smallreal^fmri74",
-    "smallreal^lazega",
+    # "smallreal^ckm_physicians",
+    # "smallreal^eu_transportation",
+    # "smallreal^eu_transport_klm",
+    # "smallreal^fmri74",
+    # "smallreal^lazega",
     "smallreal^l2_course_net_1",
-    "smallreal^l2_course_net_2",
-    "smallreal^l2_course_net_3",
+    # "smallreal^l2_course_net_2",
+    # "smallreal^l2_course_net_3",
     "smallreal^toy_network",
-    "smallart^er1",
-    "smallart^er2",
-    "smallart^er3",
-    "smallart^er5",
-    "smallart^sf1",
-    "smallart^sf2",
-    "smallart^sf3",
-    "smallart^sf5",
+    # "smallart^er1",
+    # "smallart^er2",
+    # "smallart^er3",
+    # "smallart^er5",
+    # "smallart^sf1",
+    # "smallart^sf2",
+    # "smallart^sf3",
+    # "smallart^sf5",
   ]
 
 simulator:
   max_epochs_num: -1  # this is a wildcard for unlimited allowed epochs in LTM spread instance
-  patience: 1  # after given number of epochs without spreading progress simulation is stopped
   repetitions: 2  # number of repetitions of each simulated case
 
 io:
   ranking_path: null  # path to read rankings of actors from (null to compute them before exper.)
   # ranking_path: "examples/simulate/rankings"
-  full_output_frequency: -1  # freq. of logging very detailed data form simulated cases
   compress_to_zip: True  # wether compress ot zip "detailed_logs" and "rankings"
   out_dir: "./examples/simulate"  # dir to save results, to send them to hell use e.g. "/dev/null" 

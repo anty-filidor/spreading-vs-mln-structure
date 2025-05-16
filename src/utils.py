@@ -23,7 +23,7 @@ def get_diff_of_times(strftime_1, strftime_2):
     return t_2 - t_1
 
 
-def get_case_name_base(protocol: str, mi_value: float, budget: int, ss_name: str, net_name: str) -> str:
+def get_case_name_base(protocol: str, mi_value: float, budget: float, ss_name: str, net_name: str) -> str:
     return f"proto-{protocol}--mi-{round(mi_value, 3)}--budget-{budget}--ss-{ss_name}--net-{net_name}"
 
 
@@ -34,7 +34,7 @@ def get_case_name_rich(
     reps_nb: int,
     protocol: str,
     mi_value: float,
-    budget: int, 
+    budget: float, 
     net_name: str,
     ss_name: str,
 ) -> str:

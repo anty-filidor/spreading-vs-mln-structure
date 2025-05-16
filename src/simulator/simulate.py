@@ -23,16 +23,13 @@ def run_experiments(config: dict[str, Any]) -> None:
     ssms = params_handler.load_seed_selectors(config["parameter_space"]["ss_methods"])
     p_space = params_handler.get_parameter_space(
         protocols=config["parameter_space"]["protocols"],
+        probabs=config["parameter_space"]["probabs"],
         seed_budgets=config["parameter_space"]["seed_budgets"],
-        mi_values=config["parameter_space"]["mi_values"],
-        networks=[(net.n_type, net.n_name) for net in nets],
         ss_methods=config["parameter_space"]["ss_methods"],
+        networks=[(net.n_type, net.n_name) for net in nets],
     )
 
     # get parameters of the simulator
-    logging_freq = params_handler.get_logging_frequency(config["io"]["full_output_frequency"])
-    max_epochs_num = 1000000000 if (_ := config["simulator"]["max_epochs_num"]) == -1 else _
-    patience = config["simulator"]["patience"]
     ranking_path = config["io"].get("ranking_path")
     repetitions = config["simulator"]["repetitions"]
     rng_seed = "_"if config["run"].get("rng_seed") is None else config["run"]["rng_seed"]
@@ -72,7 +69,7 @@ def run_experiments(config: dict[str, Any]) -> None:
         # start simulations
         p_bar = tqdm(p_space, desc="", leave=False, colour="green")
         for idx, investigated_case in enumerate(p_bar):
-            proto, budget, mi, net_type_name, ss_method = investigated_case
+            proto, budget, p, net_type_name, ss_method = investigated_case
             try:
                 net = [
                     net for net in nets if 
@@ -85,23 +82,21 @@ def run_experiments(config: dict[str, Any]) -> None:
                         case_idx=idx,
                         cases_nb=len(p_bar),
                         protocol=proto,
-                        mi_value=mi,
+                        mi_value=p,
                         budget=budget[1],
                         net_name=net.rich_name,
                         ss_name=ss_method,
                     )
                 )
-                ic_name = f"{utils.get_case_name_base(proto, mi, budget[1], ss_method, net.rich_name)}--ver-{ver}"
+                ic_name = f"{utils.get_case_name_base(proto, p, budget[1], ss_method, net.rich_name)}--ver-{ver}"
                 investigated_case_results = ranking_runner.handle_step(
                     proto=proto, 
+                    p=p,
                     budget=budget,
-                    mi=mi,  # TODO: change to p
-                    net=net,
                     ss_method=ss_method,
+                    net=net,
                     ranking=rankings[(net.rich_name, ss_method)],
-                    max_epochs_num=max_epochs_num,
-                    patience=patience,
-                    out_dir=det_dir / ic_name if rep % logging_freq == 0 else None
+                    max_epochs_num=config["simulator"]["max_epochs_num"],
                 )
                 rep_results.extend(investigated_case_results)
             except BaseException as e:
