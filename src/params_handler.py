@@ -15,7 +15,7 @@ from src.loaders.net_loader import load_network
 from src.loaders.constants import SEPARATOR
 
 
-class JSONEncoder(json.JSONEncoder):
+class JSONEncoder(json.JSONEncoder):  # TODO -> move to nd
     def default(self, obj):
         if isinstance(obj, nd.MLNetworkActor):
             return obj.__dict__
@@ -47,26 +47,13 @@ class SeedSelector:
 def get_parameter_space(
     protocols: list[str],
     seed_budgets: list[float],
-    mi_values: list[str],
+    mi_values: list[float],
     networks: list[tuple[str, str]],
     ss_methods: list[str],
-) -> tuple[list[tuple[str, tuple[int, int], float, str, str]], str]:
-    runner_type = determine_runner(ss_methods)
-    print(f"Determined runner type: {runner_type}")
-    if runner_type == "greedy":
-        seed_budgets = [max(seed_budgets)]
+) -> list[tuple[str, tuple[float, float], float, tuple[str, str], str]]:
     seed_budgets_full = [(100 - i, i) for i in seed_budgets]
     p_space = itertools.product(protocols, seed_budgets_full, mi_values, networks, ss_methods)
-    return list(p_space), runner_type
-
-
-def determine_runner(ss_methods: list[str]):
-    ssm_prefixes = [ssm[:2] == f"g{WILDCARD}" for ssm in ss_methods]
-    if all(ssm_prefixes):
-        return "greedy"
-    elif not any(ssm_prefixes):
-        return "ranking"
-    raise ValueError(f"Config file shall contain ssm that can be run with one runner {ss_methods}!")
+    return list(p_space)
 
 
 def get_logging_frequency(full_output_frequency: int) -> float | int:
@@ -85,17 +72,6 @@ def create_out_dir(out_dir: str) -> Path:
     return out_dir
 
 
-def get_for_greedy(get_ss_func: Callable) -> Callable:
-    """Decorate seed selection loader so that it can determine a base ranking for greedy."""
-    @wraps(get_ss_func)
-    def wrapper(selector_name: str) -> nd.seeding.BaseSeedSelector:
-        if selector_name[:2] == f"g{WILDCARD}":
-            return get_ss_func(selector_name[2:])
-        return get_ss_func(selector_name)
-    return wrapper
-
-
-@get_for_greedy
 def get_seed_selector(selector_name: str) -> nd.seeding.BaseSeedSelector:
     if selector_name == "btw":
         return nd.seeding.BetweennessSelector()
@@ -166,7 +142,7 @@ def compute_rankings(
     seed_selectors: list[SeedSelector],
     networks: list[Network],
     out_dir: Path,
-    version: int,
+    version: str,
     ranking_path: Path | None = None,
 ) -> dict[tuple[str, str]: list[nd.MLNetworkActor]]:
     """For given networks and seed seleciton methods compute or load rankings of actors."""
@@ -179,7 +155,7 @@ def compute_rankings(
             print(f"Using method: {ssm.name} ({s_idx+1}/{len(seed_selectors)})")   
             ss_ranking_name = Path(f"ss-{ssm.name}--net-{net.rich_name}--ver-{version}.json")
 
-            # obtain ranking for given ssm and net
+            # obtain ranking for given ssm and net  # TODO: move to nd
             if ranking_path:
                 ranking_file = Path(ranking_path) / ss_ranking_name
                 with open(ranking_file, "r") as f:
@@ -187,7 +163,7 @@ def compute_rankings(
                 ranking = [nd.MLNetworkActor.from_dict(rd) for rd in ranking_dict]
                 print("\tranking loaded")
             else:
-                ranking = ssm.selector(net.graph, actorwise=True)
+                ranking = ssm.selector(net.n_graph_nx, actorwise=True)
                 print("\tranking computed")
             nets_and_ranks[(net.rich_name, ssm.name)] = ranking
 

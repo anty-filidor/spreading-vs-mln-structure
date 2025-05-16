@@ -6,7 +6,7 @@ from typing import Any
 from tqdm import tqdm
 
 from src import params_handler, result_handler, utils
-from src.simulator import greedy_runner, ranking_runner
+from src.simulator import ranking_runner
 
 
 DET_LOGS_DIR = "detailed_logs"
@@ -15,16 +15,17 @@ RANKINGS_DIR = "rankings"
 
 def run_experiments(config: dict[str, Any]) -> None:
 
-    # load networks, initialise ssms
-    nets = params_handler.load_networks(config["parameter_space"]["networks"])
+    # load networks, initialise ssms and evaluated parameter space
+    nets = params_handler.load_networks(
+        networks=config["parameter_space"]["networks"],
+        device=config["run"]["device"]
+    )
     ssms = params_handler.load_seed_selectors(config["parameter_space"]["ss_methods"])
-
-    # get parameters of the simulation
-    p_space, runner_type = params_handler.get_parameter_space(
+    p_space = params_handler.get_parameter_space(
         protocols=config["parameter_space"]["protocols"],
         seed_budgets=config["parameter_space"]["seed_budgets"],
         mi_values=config["parameter_space"]["mi_values"],
-        networks=[(net.type, net.name) for net in nets],
+        networks=[(net.n_type, net.n_name) for net in nets],
         ss_methods=config["parameter_space"]["ss_methods"],
     )
 
@@ -35,7 +36,6 @@ def run_experiments(config: dict[str, Any]) -> None:
     ranking_path = config["io"].get("ranking_path")
     repetitions = config["simulator"]["repetitions"]
     rng_seed = "_"if config["run"].get("rng_seed") is None else config["run"]["rng_seed"]
-    step_handler = ranking_runner.handle_step if runner_type == "ranking" else greedy_runner.handle_step
 
     # prepare output directories and determine how to store results
     out_dir = params_handler.create_out_dir(config["io"]["out_dir"])
@@ -76,7 +76,7 @@ def run_experiments(config: dict[str, Any]) -> None:
             try:
                 net = [
                     net for net in nets if 
-                    net.type == net_type_name[0] and net.name == net_type_name[1]
+                    net.n_type == net_type_name[0] and net.n_name == net_type_name[1]
                 ][0]
                 p_bar.set_description_str(
                     utils.get_case_name_rich(
@@ -92,10 +92,10 @@ def run_experiments(config: dict[str, Any]) -> None:
                     )
                 )
                 ic_name = f"{utils.get_case_name_base(proto, mi, budget[1], ss_method, net.rich_name)}--ver-{ver}"
-                investigated_case_results = step_handler(
+                investigated_case_results = ranking_runner.handle_step(
                     proto=proto, 
                     budget=budget,
-                    mi=mi,
+                    mi=mi,  # TODO: change to p
                     net=net,
                     ss_method=ss_method,
                     ranking=rankings[(net.rich_name, ss_method)],
