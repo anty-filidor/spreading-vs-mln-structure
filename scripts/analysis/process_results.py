@@ -1,7 +1,5 @@
 """Statistical analysis of the results."""
 
-# TODO: needs to be updated - network loader has been changed
-
 import argparse
 from pathlib import Path
 from typing import Sequence
@@ -24,18 +22,14 @@ def parse_args(*args: Sequence[str]) -> argparse.Namespace:
         help="IDs of series to process results from",
         nargs="?",
         type=list[str],
-        # default=["0", "0a"],
-        default=["0", "1", "2", "3", "4"],
-        # default=["0", "5", "6", "7", "8", "9"],
-        # default=["0", "10"],
+        default=["1"],
     )
     parser.add_argument(
         "baseline_type",
         help="Type of the network to be useda as a baseline run",
         nargs="?",
         type=str,
-        default="timik1q2009",
-        # default="data.nets_generated.series_0",
+        default="series_1",
 
     )
     return parser.parse_args(*args)
@@ -56,8 +50,8 @@ def main(series_list: list[str], baseline_type: str) -> None:
     # analyse the results
     out_pdf = PdfPages(workdir.joinpath(f"expositions.pdf"))
     out_csv = []
-    for (protocol, mi_value, seed_budget, ss_method) in results.get_combinations():
-        case_name = f"δ={protocol}, μ={mi_value}, s={seed_budget}, φ={ss_method}"
+    for (protocol, probab, seed_budget, ss_method) in results.get_combinations():
+        case_name = f"δ={protocol}, π={probab}, s={seed_budget}, φ={ss_method}"
         print(case_name)
 
         # for each case obtain partial raw results
@@ -65,7 +59,7 @@ def main(series_list: list[str], baseline_type: str) -> None:
         for net_type in results.get_net_types():
             results_slice = results.get_slice(
                 protocol=protocol,
-                mi_value=mi_value,
+                probab=probab,
                 seed_budget=seed_budget,
                 ss_method=ss_method,
                 net_type=net_type,
@@ -81,14 +75,14 @@ def main(series_list: list[str], baseline_type: str) -> None:
             out_csv.append(
                 {
                     "protocol": protocol,
-                    "mi_value": mi_value,
+                    "probab": probab,
                     "seed_budget": seed_budget,
                     "ss_method": ss_method,
                     "net_type": net_type,
                     "gain_avg": results_slice["gain"].mean(),
                     "gain_std": results_slice["gain"].std(),
-                    "auc_avg": results_slice["auc"].mean(),
-                    "auc_std": results_slice["auc"].std(),
+                    "area_avg": results_slice["area"].mean(),
+                    "area_std": results_slice["area"].std(),
                 }
             )
 

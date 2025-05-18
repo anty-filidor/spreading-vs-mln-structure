@@ -1,9 +1,12 @@
 """Script with an auxiliary class to plot results."""
 
+from typing import Any
+
 import matplotlib
 import matplotlib.ticker
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
 
 from src.aux import BASELINE_ACTORS_COLOUR, BASELINE_ACTORS_LINE
 
@@ -31,10 +34,10 @@ class ResultsPlotter:
 
     def plot_single_comparison_dynamics(
         self,
-        records_experiments: dict[str, dict[str, float]],
+        records_experiments: dict[str, dict[str, Any]],
         baseline_key: str,
         title: str,
-        ax: matplotlib.axes.Axes,
+        ax: Axes,
     ) -> None:
         plt.rc("legend", fontsize=8)
         x_max = max([len(re["avg"]) for re in records_experiments.values()])
