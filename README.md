@@ -47,10 +47,14 @@ dvc pull
 Series of experiments:
 - 0: timik1q2009 without self-edges and isolated nodes
 - 1: a twin of timik1q2009 with some parameters smoothed
-- 2: xi in all layers equals 1.00
-- 3: xi in all layers equals 200% of the original xi
-- 4: xi in all layers equals 50% of the original xi
-- 5: xi in all layers equals 0.01
+- 2: series 1 with modified xi in all layers to 1.00
+- 3: series 1 with modified xi in all layers to 200% of the original xi
+- 4: series 1 with modified xi in all layers to 50% of the original xi
+- 5: series 1 with modified xi in all layers to 0.01
+- 6: series 1 with 150% of the original number of actors
+- 7: series 1 with 125% of the original number of actors
+- 8: series 1 with 75% of the original number of actors
+- 9: series 1 with 50% of the original number of actors
 <!-- - 5: artifitial networks generated on obtained configuration model for timik1q2009
 - 6: 75% of actors from series 0
 - 7: 50% of actors from series 0
