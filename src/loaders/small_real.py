@@ -25,7 +25,7 @@ from src.loaders.fmri74 import read_fmri74
 def _network_from_pandas(path: str) -> nd.MultilayerNetwork:
     df = pd.read_csv(path, names=["node_1", "node_2", "layer"])
     net_dict = {l_name: nx.Graph() for l_name in df["layer"].unique()}
-    for _, row in df.iterrows():  # TODO: consider changing the method of iterating
+    for _, row in df.iterrows():
         net_dict[row["layer"]].add_edge(row["node_1"], row["node_2"])
     return nd.MultilayerNetwork.from_nx_layers(
         layer_names=list(net_dict.keys()), network_list=list(net_dict.values())

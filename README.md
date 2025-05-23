@@ -44,23 +44,29 @@ the shell:
 dvc pull
 ```
 
-Series of experiments:
+### Series of experiments:
+
+Baseline:
 - 0: timik1q2009 without self-edges and isolated nodes
 - 1: a twin of timik1q2009 with some parameters smoothed
+
+Experiment A - modify the noise level between communities:
 - 2: series 1 with modified xi in all layers to 1.00
 - 3: series 1 with modified xi in all layers to 200% of the original xi
 - 4: series 1 with modified xi in all layers to 50% of the original xi
 - 5: series 1 with modified xi in all layers to 0.01
+
+Experiment B - modify the number of actors:
 - 6: series 1 with 150% of the original number of actors
 - 7: series 1 with 125% of the original number of actors
 - 8: series 1 with 75% of the original number of actors
 - 9: series 1 with 50% of the original number of actors
-<!-- - 5: artifitial networks generated on obtained configuration model for timik1q2009
-- 6: 75% of actors from series 0
-- 7: 50% of actors from series 0
-- 8: 25% of actors from series 0
-- 9: 1% of actors from series 0
-- 10: Delta equals to 1000 nodes per layer -->
+
+Experiment C - modify the communities correlation between layers
+- 10: series 1 with modified r to 1.000 (strenghten overlapping between comm-s)
+- 11: series 1 with modified r to 0.667 (strenghten overlapping between comm-s)
+- 12: series 1 with modified r to 0.333 (weaken overlapping between comm-s)
+- 13: series 1 with modified r to 0.001 (weaken overlapping between comm-s)
 
 ## Repository Structure
 
@@ -100,7 +106,7 @@ following columns:
 
 ```python
 {
-    seed_ids: str           # IDs of actors that were seeds, aggregated into a string (separated by ;)
+    seed_ids: str           # IDs of actors that were seeds, aggregated into a string (sep. by ;)
     gain: float             # Gain* obtained using this seed set
     area: float             # Area* under normalised activations curve obtained using this seed set
     simulation_length: int  # Number of simulation steps
