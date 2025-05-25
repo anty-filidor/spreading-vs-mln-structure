@@ -8,19 +8,11 @@ parameter_space:  # parameters in a form of lists. the simulator will eval. thei
   probabs: [0.5, 0.15, 0.2]
   seed_budgets: [5, 10, 15]
   ss_methods: [
-    # "btw",
-    # "cbim",
-    # "cim",
-    # "cls",
-    # "dcb",
     "deg_c",
     # "deg_cd",
-    # "k_sh",
-    # "k_sh_m",
-    # "kpp_sh",
     # "nghb_1s",
-    # "nghb_2s",
     # "nghb_sd",
+    # "sl_nghb_sd",
     # "p_rnk",
     # "p_rnk_m",
     "random",

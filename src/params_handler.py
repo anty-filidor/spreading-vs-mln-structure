@@ -53,6 +53,21 @@ class MyRandomSeedSelector(nd.seeding.RandomSeedSelector):  # TODO: move to nd
         return sorted_actors
 
 
+class SingleLayerNeighbourhoodSizeDiscountSelector(nd.seeding.RandomSeedSelector):
+    """Class to run nghb-sd only on the first alphabetically layer."""
+
+    nghb_sd = nd.seeding.NeighbourhoodSizeDiscountSelector()
+
+    def actorwise(self, net: nd.MultilayerNetwork) -> list[nd.MLNetworkActor]:
+        ref_lname = sorted(list(net.layers))[0]
+        ref_lgraph = nd.MultilayerNetwork({ref_lname: net[ref_lname]})
+        ref_ranking = self.nghb_sd.actorwise(ref_lgraph)
+        ref_order = {actor.actor_id: idx for idx, actor in enumerate(ref_ranking)}
+        actors = net.get_actors(shuffle=False)
+        sorted_actors = sorted(actors, key=lambda x: ref_order.get(x.actor_id, float('inf')))
+        return sorted_actors
+
+
 def get_parameter_space(
     protocols: list[str],
     probabs: list[float],
@@ -76,28 +91,12 @@ def create_out_dir(out_dir: str) -> Path:
 
 
 def get_seed_selector(selector_name: str) -> nd.seeding.BaseSeedSelector:
-    if selector_name == "btw":
-        return nd.seeding.BetweennessSelector()
-    if selector_name == "cbim":
-        return nd.seeding.CBIMSeedselector(merging_idx_threshold=1)
-    elif selector_name == "cim":
-        return nd.seeding.CIMSeedSelector()
-    elif selector_name == "cls":
-        return nd.seeding.ClosenessSelector()
-    elif selector_name == "deg_c":
+    if selector_name == "deg_c":
         return nd.seeding.DegreeCentralitySelector()
     elif selector_name == "deg_cd":
         return nd.seeding.DegreeCentralityDiscountSelector()
-    elif selector_name == "k_sh":
-        return nd.seeding.KShellSeedSelector()
-    elif selector_name == "k_sh_m":
-        return nd.seeding.KShellMLNSeedSelector()
-    elif selector_name == "kpp_sh":
-        return nd.seeding.KPPShellSeedSelector()
     elif selector_name == "nghb_1s":
         return nd.seeding.NeighbourhoodSizeSelector(connection_hop=1)
-    elif selector_name == "nghb_2s":
-        return nd.seeding.NeighbourhoodSizeSelector(connection_hop=2)
     elif selector_name == "nghb_sd":
         return nd.seeding.NeighbourhoodSizeDiscountSelector()
     elif selector_name == "p_rnk":
@@ -110,6 +109,8 @@ def get_seed_selector(selector_name: str) -> nd.seeding.BaseSeedSelector:
         return nd.seeding.VoteRankSeedSelector()
     elif selector_name == "v_rnk_m":
         return nd.seeding.VoteRankMLNSeedSelector()
+    elif selector_name == "sl_nghb_sd":
+        return SingleLayerNeighbourhoodSizeDiscountSelector()
     raise AttributeError(f"{selector_name} is not a valid name for seed selector!")
 
 
