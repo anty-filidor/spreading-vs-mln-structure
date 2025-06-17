@@ -27,7 +27,6 @@ consists of following steps:
 ### Series of Experiments:
 
 Baseline:
-- 0: timik1q2009 without self-edges and isolated nodes
 - 1: a twin of timik1q2009 with some parameters smoothed
 
 Experiment A - modify the noise level between communities:
