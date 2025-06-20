@@ -19,7 +19,7 @@ mln_config:
     Delta: [0.0250, 0.0333, 0.0400, 0.0800]  # max. degree
     beta: [1.5, 1.5, 1.7, 1.7]  # exponent of power-law community size distribution
     s: [0.0080, 0.0107, 0.0160, 0.0320]  # min. community size
-    S: [0.0320, 0.0427, 0.0640, 0.1280]  # max. communiti size
+    S: [0.0320, 0.0427, 0.0640, 0.1280]  # max. community size
     xi: [0.2, 0.2, 0.2, 0.1]  # level of noise
   d_max_iter: 1000 # maximum number of iterations for sampling degrees
   c_max_iter: 1000 # maximum number of iterations for sampling cluster sizes

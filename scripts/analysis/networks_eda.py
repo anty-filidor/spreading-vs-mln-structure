@@ -1,7 +1,5 @@
 """Plot basic properties of the networks."""
 
-# TODO: needs to be updated - network loader has been changed
-
 from dataclasses import dataclass, asdict
 
 import networkx as nx
@@ -9,23 +7,27 @@ import network_diffusion as nd
 import numpy as np
 import pandas as pd
 
+from src.loaders.constants import SEPARATOR
 from src.params_handler import Network, load_networks
 
 
-BASE_NETWORK = "timik1q2009"
+BASE_NETWORK = ["bigreal", "timik1q2009"]
 TWIN_NETWORKS = {
-    "series_0": "twin", 
-    "series_1": "75_prct_actors", 
-    "series_2": "50_prct_actors", 
-    "series_3": "25_prct_actors", 
-    "series_4": "01_prct_actors", 
-    "series_5": "xi_1.00", 
-    "series_6": "xi_200_prct", 
-    "series_7": "xi_50_prct", 
-    "series_8": "xi_0.01",
-    "series_9": "limited_degree",
+    "series_1": "timik_twin",
+    "series_2": "xi_1.00",
+    "series_3": "xi_200_prct",
+    "series_4": "xi_50_prct",
+    "series_5": "xi_0.01",
+    "series_6": "150_prct_actors",
+    "series_7": "125_prct_actors",
+    "series_8": "75_prct_actors",
+    "series_9": "50_prct_actors",
+    "series_10": "r_1.000",
+    "series_11": "r_0.667",
+    "series_12": "r_0.333",
+    "series_13": "r_0.001",
 }
-# BINS = [0., .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]
+DEVICE = "cpu"
 
 
 @dataclass
@@ -37,21 +39,17 @@ class NetworkMetrics:
     degree: float
     density: float
     components: float
-    # betweenness: float
-    # closeness: float
     clustering_coeff: float
 
 
 def analyse_network(network: nd.MultilayerNetwork) -> NetworkMetrics:
-    _nds, _edgs, _degree, _dnst, _comp, _btwn, _clsns, _clstr = [], [], [], [], [], [], [], []
+    _nds, _edgs, _degree, _dnst, _comp,  _clstr = [], [], [], [], [], []
     for l_graph in network.layers.values():
         _nds.append(len(l_graph.nodes()))
         _edgs.append(len(l_graph.edges()))
         _degree.extend(np.array(nx.degree(l_graph))[:, 1].astype(int))
         _dnst.append(nx.density(l_graph))
         _comp.append(len([comp for comp in nx.connected_components(l_graph)]))
-        # _btwn.extend(list(nx.betweenness_centrality(l_graph).values()))
-        # _clsns.extend(list(nx.closeness_centrality(l_graph).values()))
         _clstr.extend(list(nx.clustering(l_graph).values()))
 
     return NetworkMetrics(
@@ -62,8 +60,6 @@ def analyse_network(network: nd.MultilayerNetwork) -> NetworkMetrics:
         degree=np.array(_degree).mean(),
         density=np.array(_dnst).mean(),
         components=np.array(_comp).mean(),
-        # betweenness=np.array(_btwn).mean(),
-        # closeness=np.array(_clsns).mean(),
         clustering_coeff=np.array(_clstr).mean(),
     )
 
@@ -81,18 +77,18 @@ def analyse_networks(networks: list[Network]) -> NetworkMetrics:
         degree=np.mean([s.degree for s in stats]),
         density=np.mean([s.density for s in stats]),
         components=np.mean([s.components for s in stats]),
-        # betweenness=np.mean([s.betweenness for s in stats]),
-        # closeness=np.mean([s.closeness for s in stats]),
         clustering_coeff=np.mean([s.clustering_coeff for s in stats]),
     )
 
 
 series_stats = {
-    BASE_NETWORK: analyse_network(load_networks([BASE_NETWORK])[0].n_graph_nx)
+    BASE_NETWORK[1]: analyse_network(
+        load_networks([SEPARATOR.join(BASE_NETWORK)], DEVICE)[0].n_graph_nx
+    )
 }
 for s_name, s_nick in TWIN_NETWORKS.items():
     print(f"\n\nProcessing {s_name}")
-    s_nets = load_networks([f"mlnabcd^data/nets_generated/{s_name}/*"])
+    s_nets = load_networks([f"mlnabcd^{s_name}/*"], DEVICE)
     series_stats[s_nick] = analyse_networks(s_nets)
 
 stats_df = pd.DataFrame({key: asdict(val) for key, val in series_stats.items()})

@@ -1,10 +1,10 @@
 import pandas as pd
 
 # initialise data properties
-csv_path = "data/results_processed/1_2_3_4_5/metrics.csv"
-required_types = ("series_5", "series_4", "series_1", "series_3", "series_2")
-# csv_path = "data/results_processed/1_6_7_8_9/metrics.csv"
-# required_types = ("series_9", "series_8", "series_1", "series_7", "series_6")
+# csv_path = "data/results_processed/1_2_3_4_5/metrics.csv"
+# required_types = ("series_5", "series_4", "series_1", "series_3", "series_2")
+csv_path = "data/results_processed/1_6_7_8_9/metrics.csv"
+required_types = ("series_9", "series_8", "series_1", "series_7", "series_6")
 metric = "gain_avg"
 metric_rel = f"{metric}_rel"
 
@@ -34,19 +34,6 @@ filtered_df[metric_rel] = (
 filtered_df = filtered_df.drop("metric_ref", axis=1)
 print(filtered_df)
 
-# this is for experiment B
-# a = filtered_df.groupby(["protocol", "probab", "ss_method", "net_type"]).mean().reset_index()
-# print(a)
-# b = a.loc[a["protocol"] == "AND"][["probab", "net_type", metric_rel]].pivot(
-#     index="probab", columns="net_type"
-# )
-# b = b[[(metric_rel, net_type) for net_type in required_types]]
-# b = b.round(4)
-# print(b)
-
-
-
-
 # # table grouped by protocol
 # a = filtered_df.groupby(["protocol", "ss_method", "net_type"]).mean().reset_index()
 # print(a)
@@ -64,7 +51,7 @@ print(filtered_df)
 # b = b.round(4)
 # print(b)
 
-# # table grouped by pi
+# # table grouped by s
 # a = filtered_df.loc[filtered_df["protocol"] == "AND"].drop("protocol", axis=1)  # <- can be also OR
 # a = a.groupby(["seed_budget", "ss_method", "net_type"]).mean().reset_index()
 # print(a)
@@ -73,17 +60,25 @@ print(filtered_df)
 # b = b.round(4)
 # print(b)
 
-# this is for experiment A
-a = filtered_df
-for proto in a["protocol"].unique():
-    b = a.loc[a["protocol"] == proto]
-    for s in b["seed_budget"].unique():
-        c = b.loc[b["seed_budget"] == s]
-        print(proto, s)
-        d = c[["net_type", "probab", metric_rel]].pivot(index="probab", columns="net_type")
-        d = d[[(metric_rel, net_type) for net_type in required_types]]
-        d = d.round(4)
-        print(d)
-        d.to_latex(f"./{proto}-{s}.tex")
+# # this is for experiment A
+# a = filtered_df
+# for proto in a["protocol"].unique():
+#     b = a.loc[a["protocol"] == proto]
+#     for s in b["seed_budget"].unique():
+#         c = b.loc[b["seed_budget"] == s]
+#         print(proto, s)
+#         d = c[["net_type", "probab", metric_rel]].pivot(index="probab", columns="net_type")
+#         d = d[[(metric_rel, net_type) for net_type in required_types]]
+#         d = d.round(4)
+#         print(d)
+#         d.to_latex(f"./A-{proto}-{s}.tex")
 
-
+# this is for experiment B
+for proto in ["AND", "OR"]:
+    a = filtered_df.loc[filtered_df["protocol"] == proto].drop("protocol", axis=1)
+    a = a.groupby(["probab", "ss_method", "net_type"]).mean().reset_index()
+    b = a[["probab", "net_type", metric_rel]].pivot(index="probab", columns="net_type")
+    b = b[[(metric_rel, net_type) for net_type in required_types]]
+    b = b.round(4)
+    print(b)
+    b.to_latex(f"./B-{proto}.tex")
