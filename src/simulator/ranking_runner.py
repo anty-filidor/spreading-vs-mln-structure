@@ -1,7 +1,5 @@
 """Pure ranking based step handler."""
 
-from pathlib import Path
-
 import network_diffusion as nd
 
 from src.params_handler import Network
@@ -11,27 +9,29 @@ from src.simulator.simulation_step import experiment_step
 
 def handle_step(
     proto: str, 
+    p: float,
     budget: tuple[float, float],
-    mi: float,
-    net: Network,
     ss_method: str,
+    net: Network,
     ranking: list[nd.MLNetworkActor],
     max_epochs_num: int,
-    patience: int,
-    out_dir: Path | None,
 ) -> list[SimulationFullResult]:
     """The easiest way to handle case basing only on the ranking."""
     step_spr = experiment_step(
         protocol=proto,
+        p=p,
         budget=budget,
-        mi_value=mi,
-        net=net.graph,
+        net=net,
         ranking=ranking,
         max_epochs_num=max_epochs_num,
-        patience=patience,
-        out_dir=out_dir,
     )
     step_sfr = SimulationFullResult.enhance_SPR(
-        step_spr, net.rich_name, proto, budget[1], mi, ss_method
+        SPR=step_spr,
+        network_type=net.n_type,
+        network_name=net.n_name,
+        protocol=proto,
+        probab=p,
+        seed_budget=budget[1],
+        ss_method=ss_method,
     )
     return [step_sfr]

@@ -99,34 +99,18 @@ def get_gamma_delta_Delta(net: nx.Graph) -> dict[str, float]:
     }
 
 
-def _partitions_noise(net: nx.Graph, partition_a: set[Any], partition_b: set[Any]) -> float:
-    sub_net = net.subgraph(partition_a.union(partition_b))
-    edges_nb = len(sub_net.edges)
-    common_edges = 0
-    for edge in sub_net.edges:
-        node_a, node_b = edge
-        if node_a in partition_a and node_b in partition_b:
-            common_edges += 1
-        elif node_a in partition_b and node_b in partition_a:
-            common_edges += 1
-    return common_edges / edges_nb
-
-
 def _avg_partitions_noise(net: nx.Graph, partitions: list[set[Any]]) -> float:
     """
-    The noise is avg fract. of edges between two partitions to number of edges in the subgrah
-    incuded by these partitions.
+    The noise is fraction of edges inside partitions to number of all edges in the graph.
+    
+    xi = 0 -> all communities are separated, xi = 1 -> no distinctive communities.
     """
-    all_noises = []
-    partitions_dict = {f"p_{idx}": partition for idx, partition in enumerate(partitions)}
-    for partition_a_name, partition_b_name in helpers.prepare_layer_pairs(partitions_dict.keys()):
-        partition_a = partitions_dict[partition_a_name]
-        partition_b = partitions_dict[partition_b_name]
-        ab_noise = _partitions_noise(net, partition_a, partition_b)
-        all_noises.append(ab_noise)
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", RuntimeWarning)
-        return np.array(all_noises).mean().item()
+    all_edges = len(net.edges)
+    internal_edges = 0
+    for partition in partitions:
+        sub_net = net.subgraph(partition)
+        internal_edges += len(sub_net.edges)
+    return (all_edges - internal_edges) / all_edges
 
 
 def get_beta_s_S_xi(net: nx.Graph) -> dict[str, float]:
@@ -137,7 +121,7 @@ def get_beta_s_S_xi(net: nx.Graph) -> dict[str, float]:
         "beta": _fit_exponent_powerlaw(partitions_sizes),
         "s": min(partitions_sizes) / len(net.nodes),
         "S": max(partitions_sizes) / len(net.nodes),
-        "xi": _avg_partitions_noise(net, partitions)
+        "xi": _avg_partitions_noise(net, partitions),
     }
 
 

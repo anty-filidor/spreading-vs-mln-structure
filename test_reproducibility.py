@@ -1,50 +1,34 @@
 """E2E test for runner to check reproducibly of results."""
 
+# TODO: sth is wrong in the torch representation of the network. when actor IDs are strings, the 
+# results are not 100% the same if RNG is fixed. Probably it's a foulty implementation of bidict
+# used in nd.MultilayerNetworkTorch
+
 from pathlib import Path
+import os
 
 import pandas as pd
 import pytest
 
 from src.simulator import simulate
+from src.simulator.simulation_step import compute_gain, compute_area
 from src.utils import set_rng_seed
 
 
 @pytest.fixture
 def tcase_ranking_config():
     return {
-        "run": {"experiment_type": "simulate", "rng_seed": 1995},
+        "run": {"experiment_type": "simulate", "rng_seed": 1959, "device": "cpu"},
         "parameter_space": {
             "protocols": ["OR", "AND"],
-            "mi_values": [0.9, 0.65, 0.1],
-            "seed_budgets": [1, 10, 30],
+            "probabs": [0.9, 0.65, 0.1],
+            "seed_budgets": [10, 20, 30],
             "ss_methods": ["deg_c", "random"],
-            "networks": ["toy_network"],
+            "networks": ["smallreal^toy_network", "smallreal^l2_course_net_1"],
         },
-        "simulator": {"max_epochs_num": 10, "patience": 1, "repetitions": 3},
+        "simulator": {"max_epochs_num": 10, "repetitions": 3},
         "io": {
             "ranking_path": None,
-            "full_output_frequency": 1,
-            "compress_to_zip": False,
-            "out_dir": None,
-        },
-    }
-
-
-@pytest.fixture
-def tcase_greedy_config():
-    return {
-        "run": {"experiment_type": "simulate", "rng_seed": 1959},
-        "parameter_space": {
-            "protocols": ["OR", "AND"],
-            "mi_values": [0.5, 0.55, 0.6, 0.65, 0.7],
-            "seed_budgets": [1, 3, 5, 7, 11, 13, 17, 19],
-            "ss_methods": ["g^deg_cd", "g^v_rnk_m"],
-            "networks": ["toy_network"],
-        },
-        "simulator": {"max_epochs_num": 15, "patience": 2, "repetitions": 3},
-        "io": {
-            "ranking_path": None,
-            "full_output_frequency": 1,
             "compress_to_zip": False,
             "out_dir": None,
         },
@@ -54,17 +38,9 @@ def tcase_greedy_config():
 @pytest.fixture
 def tcase_ranking_csv_names():
     return [
-        Path("results--ver-1995_1.csv"),
-        Path("results--ver-1995_2.csv"),
-        Path("results--ver-1995_3.csv"),
-    ]
-
-
-@pytest.fixture
-def tcase_greedy_csv_names():
-    return [
         Path("results--ver-1959_1.csv"),
         Path("results--ver-1959_2.csv"),
+        Path("results--ver-1959_3.csv"),
     ]
 
 
@@ -80,17 +56,26 @@ def compare_results(gt_dir: Path, test_dir: Path, csv_names: list[str]) -> None:
 
 def check_integrity(test_df: pd.DataFrame) -> None:
     test_df["er_temp"] = test_df["expositions_rec"].map(lambda x: x.split(";")).map(lambda x: [int(xx) for xx in x])
+    test_df["g_temp"] = test_df.apply(
+        lambda row: compute_gain(row["exposed_nb"], row["seed_nb"], (row["exposed_nb"] + row["unexposed_nb"])),
+        axis=1
+    )
+    test_df["a_temp"] = test_df.apply(
+        lambda row: compute_area(row["er_temp"], row["seed_nb"], (row["exposed_nb"] + row["unexposed_nb"])),
+        axis=1
+    )
     assert test_df["seed_nb"].equals(test_df["seed_ids"].map(lambda x: x.split(";")).map(lambda x: len(x)))
     assert test_df["seed_nb"].equals(test_df["er_temp"].map(lambda x: x[0]))
-    assert test_df["simulation_length"].equals(test_df["er_temp"].map(lambda x: len(x[:-1])))
+    assert test_df["simulation_length"].equals(test_df["er_temp"].map(lambda x: len(x)))
     assert test_df["exposed_nb"].equals(test_df["er_temp"].map(lambda x: sum(x)))
+    assert test_df["gain"].round(3).equals(test_df["g_temp"].round(3))
+    assert test_df["area"].round(3).equals(test_df["a_temp"].round(3))
 
 
 @pytest.mark.parametrize(
         "tcase_config, tcase_csv_names",
         [
             ("tcase_ranking_config", "tcase_ranking_csv_names"),
-            ("tcase_greedy_config", "tcase_greedy_csv_names"),
         ]
 )
 def test_e2e(tcase_config, tcase_csv_names, request, tmpdir):
@@ -103,4 +88,5 @@ def test_e2e(tcase_config, tcase_csv_names, request, tmpdir):
 
 
 if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
     pytest.main(["-vs", __file__])

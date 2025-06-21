@@ -1,5 +1,7 @@
 """Infer configuration model for the real networks."""
 
+# TODO: needs to be updated - network loader has been changed
+
 import tempfile
 import warnings
 from pathlib import Path

@@ -1,0 +1,6 @@
+outs:
+- md5: cbfa8523aa3fed35d67b7c2c9dadade8.dir
+  size: 626988065
+  nfiles: 64
+  hash: md5
+  path: series_11

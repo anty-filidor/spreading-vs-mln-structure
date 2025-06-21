@@ -1,11 +1,9 @@
 import datetime
-import random
 import warnings
 from math import log10
 
 import git
-import torch
-import numpy as np
+from network_diffusion.utils import fix_random_seed
 
 
 warnings.filterwarnings(action="ignore", category=FutureWarning)
@@ -23,8 +21,8 @@ def get_diff_of_times(strftime_1, strftime_2):
     return t_2 - t_1
 
 
-def get_case_name_base(protocol: str, mi_value: float, budget: int, ss_name: str, net_name: str) -> str:
-    return f"proto-{protocol}--mi-{round(mi_value, 3)}--budget-{budget}--ss-{ss_name}--net-{net_name}"
+def get_case_name_base(protocol: str, probab: float, budget: float, ss_name: str, net_name: str) -> str:
+    return f"proto-{protocol}--p-{round(probab, 3)}--budget-{budget}--ss-{ss_name}--net-{net_name}"
 
 
 def get_case_name_rich(
@@ -33,15 +31,15 @@ def get_case_name_rich(
     rep_idx: int,
     reps_nb: int,
     protocol: str,
-    mi_value: float,
-    budget: int, 
+    probab: float,
+    budget: float, 
     net_name: str,
     ss_name: str,
 ) -> str:
     return (
         f"repet-{str(rep_idx).zfill(int(log10(reps_nb)+1))}/{reps_nb}--" +
         f"case-{str(case_idx).zfill(int(log10(cases_nb)+1))}/{cases_nb}--" +
-        get_case_name_base(protocol, mi_value, budget, ss_name, net_name)
+        get_case_name_base(protocol, probab, budget, ss_name, net_name)
     )
 
 
@@ -52,7 +50,4 @@ def get_recent_git_sha() -> str:
 
 
 def set_rng_seed(seed: int) -> None:
-    """Fix seed of the random numbers generator for reproducable experiments."""
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
+    fix_random_seed(seed=seed) # TODO: use it directly from nd once new version is released

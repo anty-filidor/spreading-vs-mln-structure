@@ -1,5 +1,7 @@
 """Generate degree sequences for network we used in the paper."""
 
+# TODO: needs to be updated - network loader has been changed
+
 from pathlib import Path
 
 from src.loaders.net_loader import load_network

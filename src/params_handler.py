@@ -2,21 +2,20 @@
 
 import itertools
 import json
-import math
+import random
 import tempfile
 from dataclasses import dataclass
-from functools import wraps
 from pathlib import Path
-from typing import Callable
+from typing import Any
 
 import network_diffusion as nd
 
 from src.loaders.net_loader import load_network
-from src.loaders.constants import WILDCARD
+from src.loaders.constants import SEPARATOR
 
 
 class JSONEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj) -> dict[str, Any]:
         if isinstance(obj, nd.MLNetworkActor):
             return obj.__dict__
         return super().default(obj)
@@ -24,17 +23,18 @@ class JSONEncoder(json.JSONEncoder):
 
 @dataclass(frozen=True)
 class Network:
-    type: str
-    name: str
-    graph: nd.MultilayerNetwork
+    n_type: str
+    n_name: str
+    n_graph_pt: nd.MultilayerNetworkTorch
+    n_graph_nx: nd.MultilayerNetwork
 
     @property
     def rich_name(self) -> str:
-        _type = self.type.replace("/", ".")
-        _name = self.name.replace("/", ".")
+        _type = self.n_type.replace("/", ".")
+        _name = self.n_name.replace("/", ".")
         if _type == _name:
             return _type
-        return f"{_type}-{_name}"
+        return f"{_type}{SEPARATOR}{_name}"
 
 
 @dataclass(frozen=True)
@@ -43,81 +43,60 @@ class SeedSelector:
     selector: nd.seeding.BaseSeedSelector
 
 
+class MyRandomSeedSelector(nd.seeding.RandomSeedSelector):  # TODO: move to nd
+    """Base version just stopped being capable to make deterministic; here's a workaround. """
+
+    def actorwise(self, net: nd.MultilayerNetwork) -> list[nd.MLNetworkActor]:
+        actors = net.get_actors(shuffle=False)
+        sorted_actors = sorted(actors, key=lambda x: x.actor_id)
+        random.shuffle(sorted_actors)
+        return sorted_actors
+
+
+class SingleLayerNeighbourhoodSizeDiscountSelector(nd.seeding.RandomSeedSelector):
+    """Class to run nghb-sd only on the first alphabetically layer."""
+
+    nghb_sd = nd.seeding.NeighbourhoodSizeDiscountSelector()
+
+    def actorwise(self, net: nd.MultilayerNetwork) -> list[nd.MLNetworkActor]:
+        ref_lname = sorted(list(net.layers))[0]
+        ref_lgraph = nd.MultilayerNetwork({ref_lname: net[ref_lname]})
+        ref_ranking = self.nghb_sd.actorwise(ref_lgraph)
+        ref_order = {actor.actor_id: idx for idx, actor in enumerate(ref_ranking)}
+        actors = net.get_actors(shuffle=False)
+        sorted_actors = sorted(actors, key=lambda x: ref_order.get(x.actor_id, float('inf')))
+        return sorted_actors
+
+
 def get_parameter_space(
     protocols: list[str],
+    probabs: list[float],
     seed_budgets: list[float],
-    mi_values: list[str],
-    networks: list[tuple[str, str]],
     ss_methods: list[str],
-) -> tuple[list[tuple[str, tuple[int, int], float, str, str]], str]:
-    runner_type = determine_runner(ss_methods)
-    print(f"Determined runner type: {runner_type}")
-    if runner_type == "greedy":
-        seed_budgets = [max(seed_budgets)]
+    networks: list[tuple[str, str]],
+) -> list[tuple[str, tuple[float, float], float, tuple[str, str], str]]:
     seed_budgets_full = [(100 - i, i) for i in seed_budgets]
-    p_space = itertools.product(protocols, seed_budgets_full, mi_values, networks, ss_methods)
-    return list(p_space), runner_type
-
-
-def determine_runner(ss_methods: list[str]):
-    ssm_prefixes = [ssm[:2] == f"g{WILDCARD}" for ssm in ss_methods]
-    if all(ssm_prefixes):
-        return "greedy"
-    elif not any(ssm_prefixes):
-        return "ranking"
-    raise ValueError(f"Config file shall contain ssm that can be run with one runner {ss_methods}!")
-
-
-def get_logging_frequency(full_output_frequency: int) -> float | int:
-    if full_output_frequency == -1:
-        return math.pi
-    return full_output_frequency
+    p_space = itertools.product(protocols, seed_budgets_full, probabs, networks, ss_methods)
+    return list(p_space)
 
 
 def create_out_dir(out_dir: str) -> Path:
     try:
-        out_dir = Path(out_dir)
-        out_dir.mkdir(exist_ok=True, parents=True)
+        out_dir_path = Path(out_dir)
+        out_dir_path.mkdir(exist_ok=True, parents=True)
     except FileExistsError:
         print("Redirecting output to hell...")
-        out_dir = Path(tempfile.mkdtemp())
-    return out_dir
+        out_dir_path = Path(tempfile.mkdtemp())
+    return out_dir_path
 
 
-def get_for_greedy(get_ss_func: Callable) -> Callable:
-    """Decorate seed selection loader so that it can determine a base ranking for greedy."""
-    @wraps(get_ss_func)
-    def wrapper(selector_name: str) -> nd.seeding.BaseSeedSelector:
-        if selector_name[:2] == f"g{WILDCARD}":
-            return get_ss_func(selector_name[2:])
-        return get_ss_func(selector_name)
-    return wrapper
-
-
-@get_for_greedy
 def get_seed_selector(selector_name: str) -> nd.seeding.BaseSeedSelector:
-    if selector_name == "btw":
-        return nd.seeding.BetweennessSelector()
-    if selector_name == "cbim":
-        return nd.seeding.CBIMSeedselector(merging_idx_threshold=1)
-    elif selector_name == "cim":
-        return nd.seeding.CIMSeedSelector()
-    elif selector_name == "cls":
-        return nd.seeding.ClosenessSelector()
-    elif selector_name == "deg_c":
+    if selector_name == "deg_c":
         return nd.seeding.DegreeCentralitySelector()
     elif selector_name == "deg_cd":
         return nd.seeding.DegreeCentralityDiscountSelector()
-    elif selector_name == "k_sh":
-        return nd.seeding.KShellSeedSelector()
-    elif selector_name == "k_sh_m":
-        return nd.seeding.KShellMLNSeedSelector()
-    elif selector_name == "kpp_sh":
-        return nd.seeding.KPPShellSeedSelector()
     elif selector_name == "nghb_1s":
         return nd.seeding.NeighbourhoodSizeSelector(connection_hop=1)
-    elif selector_name == "nghb_2s":
-        return nd.seeding.NeighbourhoodSizeSelector(connection_hop=2)
     elif selector_name == "nghb_sd":
         return nd.seeding.NeighbourhoodSizeDiscountSelector()
     elif selector_name == "p_rnk":
@@ -125,21 +104,32 @@ def get_seed_selector(selector_name: str) -> nd.seeding.BaseSeedSelector:
     elif selector_name == "p_rnk_m":
         return nd.seeding.PageRankMLNSeedSelector()
     elif selector_name == "random":
-        return nd.seeding.RandomSeedSelector()
+        return MyRandomSeedSelector()
     elif selector_name == "v_rnk":
         return nd.seeding.VoteRankSeedSelector()
     elif selector_name == "v_rnk_m":
         return nd.seeding.VoteRankMLNSeedSelector()
+    elif selector_name == "sl_nghb_sd":
+        return SingleLayerNeighbourhoodSizeDiscountSelector()
     raise AttributeError(f"{selector_name} is not a valid name for seed selector!")
 
 
-def load_networks(networks: list[str]) -> list[Network]:
+def load_networks(networks: list[str], device: str) -> list[Network]:
     nets = []
     for net_regex in networks:
-        for (net_type, net_name), net_graph in load_network(net_regex=net_regex).items():
-            print(f"Loading network {net_type} - {net_name}")
-            nets.append(Network(type=net_type, name=net_name, graph=net_graph))
-    print(f"Loaded: {len(nets)} networks")
+        net_type, net_name = net_regex.split(SEPARATOR)
+        print(f"Loading network(s): {net_type} - {net_name}")
+        for (net_type, net_name), net_graph in load_network(net_type=net_type, net_name=net_name).items():
+            print("\tconverting to PyTorch")
+            nets.append(
+                Network(
+                    n_type=net_type,
+                    n_name=net_name,
+                    n_graph_nx=net_graph,
+                    n_graph_pt=nd.MultilayerNetworkTorch.from_mln(net_graph, device)
+                )
+            )
+    print(f"Loaded {len(nets)} networks")
     return nets
 
 
@@ -151,15 +141,13 @@ def load_seed_selectors(ss_methods: list[str]) -> list[SeedSelector]:
     return ssms
 
 
-# TODO: this function is not able yet to treat rankings for method: g^random and random as the the
-# same one. We can try to implement such functionality to speed up computations
 def compute_rankings(
     seed_selectors: list[SeedSelector],
     networks: list[Network],
     out_dir: Path,
-    version: int,
+    version: str,
     ranking_path: Path | None = None,
-) -> dict[tuple[str, str]: list[nd.MLNetworkActor]]:
+) -> dict[tuple[str, str], list[nd.MLNetworkActor]]:
     """For given networks and seed seleciton methods compute or load rankings of actors."""
     
     nets_and_ranks = {}  # {(net_name, ss_name): ranking}
@@ -171,15 +159,20 @@ def compute_rankings(
             ss_ranking_name = Path(f"ss-{ssm.name}--net-{net.rich_name}--ver-{version}.json")
 
             # obtain ranking for given ssm and net
+            ranking = []
             if ranking_path:
                 ranking_file = Path(ranking_path) / ss_ranking_name
-                with open(ranking_file, "r") as f:
-                    ranking_dict = json.load(f)
-                ranking = [nd.MLNetworkActor.from_dict(rd) for rd in ranking_dict]
-                print("\tranking loaded")
-            else:
-                ranking = ssm.selector(net.graph, actorwise=True)
+                try:
+                    with open(ranking_file, "r") as f:
+                        ranking_dict = json.load(f)
+                    ranking = [nd.MLNetworkActor.from_dict(rd) for rd in ranking_dict]
+                    print("\tranking loaded")
+                except:
+                    print("\tunable to load ranking, falling back to computations")
+            if len(ranking) == 0:
+                ranking = ssm.selector(net.n_graph_nx, actorwise=True)
                 print("\tranking computed")
+            assert len(ranking) == net.n_graph_nx.get_actors_num()
             nets_and_ranks[(net.rich_name, ssm.name)] = ranking
 
             # save computed ranking
