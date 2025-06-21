@@ -1,12 +1,20 @@
 import pandas as pd
 
-# initialise data properties
-# csv_path = "data/results_processed/1_2_3_4_5/metrics.csv"
-# required_types = ("series_5", "series_4", "series_1", "series_3", "series_2")
-csv_path = "data/results_processed/1_6_7_8_9/metrics.csv"
-required_types = ("series_9", "series_8", "series_1", "series_7", "series_6")
+# initialise metric considered
 metric = "gain_avg"
 metric_rel = f"{metric}_rel"
+
+# # this is for experiment A
+# csv_path = "data/results_processed/1_2_3_4_5/metrics.csv"
+# required_types = ("series_5", "series_4", "series_1", "series_3", "series_2")
+
+# # this is for experiment B
+# csv_path = "data/results_processed/1_6_7_8_9/metrics.csv"
+# required_types = ("series_9", "series_8", "series_1", "series_7", "series_6")
+
+# this is for experiment C
+csv_path = "data/results_processed/1_10_11_12_13/metrics.csv"
+required_types = ("series_13", "series_12", "series_1", "series_11", "series_10")
 
 # read csv
 df = pd.read_csv(csv_path, index_col=0)
@@ -43,7 +51,7 @@ print(filtered_df)
 # print(b)
 
 # # table grouped by pi
-# a = filtered_df.loc[filtered_df["protocol"] == "AND"].drop("protocol", axis=1)  # <- can be also OR
+# a = filtered_df.loc[filtered_df["protocol"] == "AND"].drop("protocol", axis=1)  # <- can be OR
 # a = a.groupby(["probab", "ss_method", "net_type"]).mean().reset_index()
 # print(a)
 # b = a[["probab", "net_type", metric_rel]].pivot(index="probab", columns="net_type")
@@ -52,7 +60,7 @@ print(filtered_df)
 # print(b)
 
 # # table grouped by s
-# a = filtered_df.loc[filtered_df["protocol"] == "AND"].drop("protocol", axis=1)  # <- can be also OR
+# a = filtered_df.loc[filtered_df["protocol"] == "AND"].drop("protocol", axis=1)  # <- can be OR
 # a = a.groupby(["seed_budget", "ss_method", "net_type"]).mean().reset_index()
 # print(a)
 # b = a[["seed_budget", "net_type", metric_rel]].pivot(index="seed_budget", columns="net_type")
@@ -73,7 +81,17 @@ print(filtered_df)
 #         print(d)
 #         d.to_latex(f"./A-{proto}-{s}.tex")
 
-# this is for experiment B
+# # this is for experiment B
+# for proto in ["AND", "OR"]:
+#     a = filtered_df.loc[filtered_df["protocol"] == proto].drop("protocol", axis=1)
+#     a = a.groupby(["probab", "ss_method", "net_type"]).mean().reset_index()
+#     b = a[["probab", "net_type", metric_rel]].pivot(index="probab", columns="net_type")
+#     b = b[[(metric_rel, net_type) for net_type in required_types]]
+#     b = b.round(4)
+#     print(b)
+#     b.to_latex(f"./B-{proto}.tex")
+
+# this is for experiment C
 for proto in ["AND", "OR"]:
     a = filtered_df.loc[filtered_df["protocol"] == proto].drop("protocol", axis=1)
     a = a.groupby(["probab", "ss_method", "net_type"]).mean().reset_index()
@@ -81,4 +99,4 @@ for proto in ["AND", "OR"]:
     b = b[[(metric_rel, net_type) for net_type in required_types]]
     b = b.round(4)
     print(b)
-    b.to_latex(f"./B-{proto}.tex")
+    b.to_latex(f"./C-{proto}.tex")
