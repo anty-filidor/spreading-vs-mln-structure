@@ -60,6 +60,7 @@ Experiment C - modify the communities correlation between layers
 │   ├── results_processed    -> Processed results presented in the paper
 │   └── test                 -> Data used in the E2E test
 ├── env
+├── mln_abcd_properties      -> Experiments regarding mABCD properties, see README inside for details
 ├── scripts                  -> Scripts for processing `data` with `src`
 │   ├── analysis
 │   └── configs
