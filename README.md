@@ -16,7 +16,7 @@ This repository is an complementary artifact for the paper: <TODO: add an URL>
 
 ## Evaluating Properties of mABCD
 
-An additional functionality of the source code stoerd in this repository is an evaluation of
+An additional functionality of the source code stored in this repository is an evaluation of
 effectivenss of mABCD while generating graphs of different properties. It can be considered also as
 a standalone project. For details see `_mabcd_properties` directory.
 
