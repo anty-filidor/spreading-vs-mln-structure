@@ -4,8 +4,8 @@ A repository for evaluating the effectiveness of information diffusion in multil
 respect to their structural properties using mABCD. The project also contains a Julia module which
 evaluates properties of the employed framework (i.e. mABCD).
 
-**Authors**: Piotr Bródka (¶), Michał Czuba (¶), Bogumił Kamiński (†), Łukasz Kraiński (†),
-  Paweł Prałat (¬), François Théberge (§)
+**Authors**: Łukasz Kraiński (†), Michał Czuba (¶), Piotr Bródka (¶), Paweł Prałat (¬),
+  Bogumił Kamiński (†), François Théberge (§)
 
 - (¶) WUST, Wrocław, Lower Silesia, Poland
 - (†) SGH, Warsaw, Masovia, Poland
