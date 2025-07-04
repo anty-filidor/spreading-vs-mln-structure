@@ -1,17 +1,24 @@
 # Spreading Effectiveness Versus Structure of the Network
 
 A repository for evaluating the effectiveness of information diffusion in multilayer networks with
-respect to their structural properties using mABCD
+respect to their structural properties using mABCD. The project also contains a Julia module which
+evaluates properties of the employed framework (i.e. mABCD).
 
-**Authors**: Piotr Bródka (¶), Michał Czuba (¶), Bogumił Kamiński (†), Łukasz Kraiński (†),
-  Paweł Prałat (¬), François Théberge (§)
+**Authors**: Łukasz Kraiński (†), Michał Czuba (¶), Piotr Bródka (¶), Paweł Prałat (¬),
+  Bogumił Kamiński (†), François Théberge (§)
 
 - (¶) WUST, Wrocław, Lower Silesia, Poland
 - (†) SGH, Warsaw, Masovia, Poland
 - (¬) TMU, Toronto, Ontario, Canada
 - (§) TIMC, Ottawa, Ontario, Canada
 
-This repository is an auxiliary artifact for the paper: <TODO: add an URL>
+This repository is an complementary artifact for the paper: <TODO: add an URL>
+
+## Evaluating Properties of mABCD
+
+An additional functionality of the source code stored in this repository is an evaluation of
+effectivenss of mABCD while generating graphs of different properties. It can be considered also as
+a standalone project. For details see `_mabcd_properties` directory.
 
 ## Methodology
 
@@ -24,7 +31,7 @@ consists of following steps:
 - simulate a diffusion on both the real and modified graphs;
 - compare the results.
 
-### Series of Experiments:
+### Series of Experiments
 
 Baseline:
 - 1: a twin of timik1q2009 with some parameters smoothed
@@ -52,6 +59,7 @@ Experiment C - modify the communities correlation between layers
 ```bash
 .
 ├── README.md
+├── _mabcd_properties        -> Experiments of mABCD properties, see README inside for details
 ├── data                     -> Use DVC to fetch this folder
 │   ├── nets_generated       -> Generated networks with mABCD
 │   ├── nets_properties      -> Properties of real networks used in experiments
