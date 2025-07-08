@@ -1,38 +1,40 @@
 using Plots
 using Random
-using MLNABCDGraphGenerator
 using StatsBase
+using ABCDGraphGenerator
+using MLNABCDGraphGenerator
 
 include("utilities.jl")
 
-#########################
-# Correlation tau-sigma #
-#########################
+######################
+# Reference layer 2D #
+######################
+n = 1000
+β = 1.5
+max_c = round(Int, sqrt(n))
+min_c = round(Int, 0.5 * max_c)
+max_iter = 1000
+d = 2
 seed = 42
-xs = 0.01:0.1:20
-ns = [1000, 10000, 100_000, 1_000_000]
 
-ys_n = []
+# All agents active
 Random.seed!(seed)
-for n in ns
-    println("Sampling n=$(n)")
-    vs = collect(1:n)
-    ys = [corkendall(vs, MLNABCDGraphGenerator.sample_ranking(vs, n, x)) for x in xs]
-    push!(ys_n, (n, ys))
-end
+c = ABCDGraphGenerator.sample_communities(β, min_c, max_c, n, max_iter)
+x = MLNABCDGraphGenerator.sample_points(n, d)
+a = MLNABCDGraphGenerator.assign_points(x, c)
+plt = plot_reference_space_2d(x, a, collect(1:n))
+figsave(plt, "img/reference_layer.pdf")
 
-plt = plot()
-for (n, ys) in ys_n
-    plot!(plt, xs, ys, ylim=[0, 1], label="n=$(n)", linewidth=2)
-end
-xlabel!("σ")
-ylabel!("Kendall τ correlation")
-figsave(plt, "img/degree_correlation_sigma.pdf")
+# Half agents inactive
+q = 0.5
+min_c = 25
+max_c = 50
 
-plt = plot()
-for i in 1:3
-    scatter!(plt, xs, ys_n[end][2] - ys_n[i][2], label="n=$(ys_n[i][1])", markersize=4, markershape=:hexagon)
-end
-xlabel!("σ")
-ylabel!("Kendall τ correlation difference")
-figsave(plt, "img/degree_correlation_diff_sigma_dots.pdf")
+n_q = Int(q * n)
+Random.seed!(seed)
+active = sample(1:n, n_q, replace=false, ordered=true)
+c = ABCDGraphGenerator.sample_communities(β, min_c, max_c, n_q, max_iter)
+x = MLNABCDGraphGenerator.sample_points(n, d)
+a = MLNABCDGraphGenerator.assign_points(x[active, :], c)
+plt = plot_reference_space_2d(x, a, active)
+figsave(plt, "img/reference_layer_50perc_active.pdf")

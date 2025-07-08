@@ -1,36 +1,44 @@
 using Plots
-using PyCall
-AMI = pyimport("sklearn.metrics").adjusted_mutual_info_score
+using Random
+using MLNABCDGraphGenerator
+using ABCDGraphGenerator
 
 include("utilities.jl")
 
-################
-# β₁ vs β₂ AMI #
-################
-n = 1000
-iter = 500
-betas = 1.05:0.05:2
-c_min = 8
-c_max = 32
-max_iter = 1000
-r = 1.0
+###############################################
+# Empirical vs Theoretical powerlaw - degrees #
+###############################################
+
 seed = 42
-d = 2
+n = 100_000
+betas = [2.2, 2.5, 2.8]
+delta = 5
+Delta = 316
+max_iter = 1000
 
-fixed = Number[0.0, c_min, c_max, n, max_iter]
-amis = ami_parameter_sweep(collect(betas), 1, fixed, n, d, iter, r, seed)
-reshaped_amis = reshape(getindex.(amis, 1), 20, 20)
-plt = heatmap(betas, betas, reshaped_amis, ticks=betas[1:2:end])
-title!("Mean AMI 2D")
-xlabel!("β₁")
-ylabel!("β₂")
-figsave(plt, "img/ami_betas_heatmap_2D.pdf")
+Random.seed!(seed)
+degs_plot = [ABCDGraphGenerator.sample_degrees(beta, delta, Delta, n, max_iter) for beta in betas]
+ks, cdfs = powerlaw_cdfs(degs_plot)
+plt = powerlaw_plots(ks, cdfs, betas, delta, Delta)
+xlabel!("degree")
+ylabel!("1-cdf")
+figsave(plt, "img/degrees_powerlaw.pdf")
 
-d = 1
-amis_1d = ami_parameter_sweep(collect(betas), 1, fixed, n, d, iter, r, seed)
-reshaped_amis_1d = reshape(getindex.(amis_1d, 1), 20, 20)
-plt = heatmap(betas, betas, reshaped_amis_1d, ticks=betas[1:2:end])
-title!("Mean AMI 1D")
-xlabel!("β₁")
-ylabel!("β₂")
-figsave(plt, "img/ami_betas_heatmap_1D.pdf")
+#######################################################
+# Empirical vs Theoretical powerlaw - community sizes #
+#######################################################
+
+seed = 42
+n = 100_000
+betas = [1.2, 1.5, 1.8]
+s = 10
+S = 1000
+max_iter = 1000
+
+Random.seed!(seed)
+coms_plot = [ABCDGraphGenerator.sample_communities(beta, s, S, n, max_iter) for beta in betas]
+ks, cdfs = powerlaw_cdfs(coms_plot)
+plt = powerlaw_plots(ks, cdfs, betas, s, S)
+xlabel!("community size")
+ylabel!("1-cdf")
+figsave(plt, "img/com_sizes_powerlaw.pdf")

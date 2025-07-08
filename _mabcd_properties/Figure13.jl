@@ -14,45 +14,21 @@ using StatsPlots
 include("utilities.jl")
 
 df = CSV.read("experiments_results/speed_experiment_results.csv", DataFrame)
+
+df_p6 = df[df.n.<200000, :]
+df_p6[!, "time"] = sum.(eachrow(df_p6[!, names(df_p6, r".time")]))
+df_agg_p6 = combine(groupby(df_p6, [:n, :l]), :time .=> [mean std])
 df_no_p6 = df[:, Not("edges_correlation_time")]
 df_no_p6[!, "time"] = sum.(eachrow(df_no_p6[!, names(df_no_p6, r".time")]))
-
-df[!, "time"] = sum.(eachrow(df[!, names(df, r".time")]))
-for col in names(df, r"_time")
-    df[!, "$(col)_perc"] = df[!, col] ./ df[!, "time"] .* 100
+df_agg_no_p6 = combine(groupby(df_no_p6, [:n, :l]), :time .=> [mean std])
+plt = plot(legend=:bottomright, ylims=(0.001, 1000), xlims=(500, 1500000), xticks=10 .^ (3:6), tickfontsize=10, legendfontsize=10)
+for (i, l) in enumerate(unique(df_agg_no_p6.l))
+    df_tmp = df_agg_no_p6[df_agg_no_p6.l.==l, :]
+    plot!(plt, df_tmp.n, df_tmp.time_mean, color=i, yaxis=:log, xaxis=:log, yerr=df_tmp.time_std, label="$(l) layers")
+    df_tmp = df_agg_p6[df_agg_p6.l.==l, :]
+    plot!(plt, df_tmp.n, df_tmp.time_mean, color=i, linestyle=:dash, yaxis=:log, xaxis=:log, yerr=df_tmp.time_std, label=" ")
 end
-df_agg_perc = combine(groupby(df, [:n, :l]), names(df, r"_perc") .=> mean)
-df_agg_perc = df_agg_perc[df_agg_perc.n.==65536, :]
-plt = groupedbar(
-    Matrix(df_agg_perc[!, Not([:n, :l])]),
-    bar_position=:stack,
-    bar_width=0.7,
-    xticks=(1:length(df_agg_perc.l), df_agg_perc.l),
-    ylims=(95, 100),
-    label=["Phase 1" "Phase 2" "Phase 3" "Phase 4+5" "Phase 6"],
-    tickfontsize=10,
-    legendfontsize=10
-)
-xlabel!("l")
-ylabel!("% of execution time")
-figsave(plt, "img/execution_time_perc_with_p6.pdf")
-
-for col in names(df_no_p6, r"_time")
-    df_no_p6[!, "$(col)_perc"] = df_no_p6[!, col] ./ df_no_p6[!, "time"] .* 100
-end
-df_agg_perc_no_p6 = combine(groupby(df_no_p6, [:n, :l]), names(df_no_p6, r"_perc") .=> mean)
-df_agg_perc_no_p6 = df_agg_perc_no_p6[df_agg_perc_no_p6.l.==5, :]
-
-plt = areaplot(
-    df_agg_perc_no_p6.n,
-    -1 .* Matrix(df_agg_perc_no_p6[!, Not([:n, :l])]),
-    xticks=([1024, 250000, 500000, 750000, 1000000],
-        ["1024", "250 000", "500 000", "750 000", "1 000 000"]),
-    yformatter=yi -> yi + 100,
-    label=["Phase 1" "Phase 2" "Phase 3" "Phase 4+5"],
-    tickfontsize=10,
-    legendfontsize=10
-)
+display(plt)
 xlabel!("n")
-ylabel!("% of execution time")
-figsave(plt, "img/execution_time_perc_without_p6_stacked.pdf")
+ylabel!("time (seconds)")
+figsave(plt, "img/execution_time_log.pdf")

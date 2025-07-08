@@ -1,55 +1,99 @@
-# To obtain data for the plots run:
-# julia --project experiments/edges_cor_convergence.jl
-using DelimitedFiles
+using StatsBase
 using Plots
+using Random
+using MLNABCDGraphGenerator
+using ABCDGraphGenerator
+using DelimitedFiles
+using PyCall
+AMI = pyimport("sklearn.metrics").adjusted_mutual_info_score
 
-graphs_path = "experiments/real-world-graphs/"
-layers_limit = 5
-graphs = ["ckm_physicians", "l2_course_net_1", "lazega", "timik1q2009"]
-epsils = ["1", "5"]
+include("utilities.jl")
 
-graph_name_dict = Dict("ckm_physicians" => "ckmp",
-    "l2_course_net_1" => "l2-course",
-    "lazega" => "lazega",
-    "timik1q2009" => "timik",
-    "cannes" => "cannes"
-)
-for graph in graphs
-    for epsil in epsils
-        layers_params = readdlm("$(graphs_path)$(graph)/layer_params.csv")
-        size(layers_params)[1] > layers_limit + 1 && continue
-        ecor_log_file = filter(x -> contains(x, "00$(epsil).txt"), readdir("$(graphs_path)$(graph)", join=true))[1]
-        ecor_log = readdlm(ecor_log_file, ',')
-        mat_distances = convert.(Float64, ecor_log[:, end][2:end])
-        ecor_log = ecor_log[:, 1:end-1]
-        ecor_pairs = split.(ecor_log[1, :], '-')
-        ecor_values = convert.(Float64, ecor_log[2:end, :])
-        steps = size(ecor_values)[1]
-        ecor_matrix = readdlm("$(graphs_path)$(graph)/edges_cor_matrix.csv", ',')
-        ecor_matrix_vals = ecor_matrix[2:end, 2:end]
-        layer_names = ecor_matrix[2:end, 1]
-        plt = plot(ylims=(0, 0.48))
-        yaxis2 = twinx()
-        plot!(yaxis2, mat_distances, linewidth=2, alpha=0.8, color="gray", label=nothing)
-        ylims!(yaxis2, (0, maximum(mat_distances) * 1.2))
-        for (i, pair) in enumerate(ecor_pairs)
-            l1, l2 = parse.(Int, pair)
-            plot!(plt, ecor_values[:, i] .+ ecor_matrix_vals[l1, l2], color=i, label="$(layer_names[l1])-$(layer_names[l2])")
-            plot!(plt, fill(ecor_matrix_vals[l1, l2], steps), color=i, linestyle=:dash, label=nothing)
+###############
+# 5 layers AMI#
+###############
+######
+# 2D #
+######
+
+iters = 100
+n = 1000
+rs = 0:0.25:1
+qs = 0.6:0.1:1.0
+βs = 1.1:0.2:1.9
+ss = 8:16:72
+Ss = 32:16:96
+Random.seed!(42)
+x = MLNABCDGraphGenerator.sample_points(n, 2)
+amis_mat = zeros(5, 5)
+vs = 1:n
+for iter in 1:iters
+    println("Iteration $(iter)")
+    vs_i = [sample(vs, round(Int, q * n), replace=false, ordered=true) for q in qs]
+    coms = [ABCDGraphGenerator.sample_communities(βs[i], ss[i], Ss[i], length(vs_i[i]), 1000) for i in eachindex(vs_i)]
+    as = [MLNABCDGraphGenerator.assign_points(x[vs_i[i], :], coms[i]) for i in eachindex(vs_i)]
+    shuffled_flat_as = [flatten_clustering(MLNABCDGraphGenerator.shuffle_communities(rs[i], as[i])) for i in eachindex(vs_i)]
+    full_as = [zeros(Int, n) for i in eachindex(vs_i)]
+    for i in eachindex(vs_i)
+        for (j, c) in enumerate(shuffled_flat_as[i])
+            full_as[i][vs_i[i][j]] = c
         end
-        if graph != "l2_course_net_1"
-            plot!(legend=(0.69, 0.28))
-        end
-        if graph == "timik1q2009"
-            plot!(legend=:topright)
-        end
-        title!("$(graph_name_dict[graph]), ϵ=0.0$(epsil)")
-        xlabel!(plt, "Batch")
-        xlabel!(yaxis2, "")
-        ylabel!(plt, "Edges correlation")
-        ylabel!(yaxis2, "L2 distance")
-        plot_file = "img/edges_cor_convergence_$(graph)_$(epsil).pdf"
-        savefig(plt, plot_file)
-        println("Saved $(plot_file) for epsilon $(epsil)")
     end
+    iter_ami_mat = zeros(5, 5)
+    for i in 1:5
+        for j in 1:5
+            common_idx = findall(x -> x != 0, full_as[i] .* full_as[j])
+            iter_ami_mat[i, j] = AMI(full_as[i][common_idx], full_as[j][common_idx])
+        end
+    end
+    global amis_mat += iter_ami_mat
 end
+amis_mat = abs.(amis_mat ./ iters)
+
+plt = heatmap(rs, rs, amis_mat, c=:Blues, legend=:none)
+xticks!(rs, string.(zip(βs, ss, Ss)) .* '\n' .* string.(zip(qs, rs)))
+yticks!(rs, string.(zip(βs, ss, Ss)) .* '\n' .* string.(zip(qs, rs)))
+annotate!(repeat(rs, inner=5), repeat(rs, 5), vec(string.(round.(amis_mat, digits=3))))
+title!("Mean AMI 2D")
+xlabel!("(β,s,S)(q,r)")
+ylabel!("(β,s,S)(q,r)")
+figsave(plt, "img/beta_s_S_q_r_heatmap_2D.pdf")
+
+######
+# 1D #
+######
+
+Random.seed!(42)
+x1 = MLNABCDGraphGenerator.sample_points(n, 1)
+amis_mat_1d = zeros(5, 5)
+for iter in 1:iters
+    println("Iteration $(iter)")
+    vs_i = [sample(vs, round(Int, q * n), replace=false, ordered=true) for q in qs]
+    coms = [ABCDGraphGenerator.sample_communities(βs[i], ss[i], Ss[i], length(vs_i[i]), 1000) for i in eachindex(vs_i)]
+    as = [assign_points_1d(x1[vs_i[i]], coms[i]) for i in eachindex(vs_i)]
+    shuffled_flat_as = [flatten_clustering(MLNABCDGraphGenerator.shuffle_communities(rs[i], as[i])) for i in eachindex(vs_i)]
+    full_as = [zeros(Int, n) for i in eachindex(vs_i)]
+    for i in eachindex(vs_i)
+        for (j, c) in enumerate(shuffled_flat_as[i])
+            full_as[i][vs_i[i][j]] = c
+        end
+    end
+    iter_ami_mat = zeros(5, 5)
+    for i in 1:5
+        for j in 1:5
+            common_idx = findall(x -> x != 0, full_as[i] .* full_as[j])
+            iter_ami_mat[i, j] = AMI(full_as[i][common_idx], full_as[j][common_idx])
+        end
+    end
+    global amis_mat_1d += iter_ami_mat
+end
+amis_mat_1d = abs.(amis_mat_1d ./ iters)
+
+plt = heatmap(rs, rs, amis_mat_1d, c=:Blues, legend=:none)
+xticks!(rs, string.(zip(βs, ss, Ss)) .* '\n' .* string.(zip(qs, rs)))
+yticks!(rs, string.(zip(βs, ss, Ss)) .* '\n' .* string.(zip(qs, rs)))
+annotate!(repeat(rs, inner=5), repeat(rs, 5), vec(string.(round.(amis_mat_1d, digits=3))))
+title!("Mean AMI 1D")
+xlabel!("(β,s,S)(q,r)")
+ylabel!("(β,s,S)(q,r)")
+figsave(plt, "img/beta_s_S_q_r_heatmap_1D.pdf")
