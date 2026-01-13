@@ -12,7 +12,7 @@ evaluates properties of the employed framework (i.e. mABCD).
 - (¬) TMU, Toronto, Ontario, Canada
 - (§) TIMC, Ottawa, Ontario, Canada
 
-This repository is an complementary artifact for the paper: <TODO: add an URL>
+This repository is a complementary artifact for the [paper](https://arxiv.org/abs/2507.10795).
 
 ## Evaluating Properties of mABCD
 
